@@ -1,0 +1,15 @@
+{
+  "name": "intelligent-bistro",
+  "private": true,
+  "version": "1.0.0",
+  "description": "React Native Expo mobile app and Node API for AI-assisted restaurant ordering.",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:api": "node apps/api/src/server.js",
+    "test:api": "node apps/api/test/run-tests.js",
+    "dev:mobile": "corepack npm exec --workspace @intelligent-bistro/mobile expo start",
+    "dev:web": "corepack npm exec --workspace @intelligent-bistro/mobile expo start -- --web"
+  }
+}

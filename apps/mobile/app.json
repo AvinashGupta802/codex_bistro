@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "Intelligent Bistro",
+    "slug": "intelligent-bistro",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "intelligent-bistro",
+    "splash": {
+      "backgroundColor": "#F8F5EF"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#F8F5EF"
+      }
+    }
+  }
+}
+
