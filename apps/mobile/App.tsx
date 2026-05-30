@@ -312,41 +312,6 @@ export default function App() {
           )}
         />
 
-        {selectedMood ? (
-          <View style={styles.chatSuggestions}>
-            <View style={styles.chatSuggestionsHeader}>
-              <Text style={styles.chatSuggestionsTitle}>Suggested for {selectedMood.label}</Text>
-              <Pressable
-                onPress={() => addRecommendation(selectedMood.actions, selectedMood.label.toLowerCase())}
-                style={styles.chatAddButton}
-              >
-                <Ionicons name="bag-add-outline" size={14} color="#FFFFFF" />
-                <Text style={styles.chatAddButtonText}>Add top picks</Text>
-              </Pressable>
-            </View>
-            {selectedMood.nutrientNeed ? (
-              <Text style={styles.chatMoodQuote}>{selectedMood.nutrientNeed}</Text>
-            ) : selectedMood.highlight ? (
-              <Text style={styles.chatMoodQuote}>{selectedMood.highlight}</Text>
-            ) : null}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {selectedMood.recommendations.map((item) => (
-                <Pressable
-                  key={item.itemId}
-                  onPress={() =>
-                    addItem(menu.find((entry) => entry.id === item.itemId)!)
-                  }
-                  style={styles.suggestionCard}
-                >
-                  <DishImage image={item.image} icon={item.icon} accent={item.accent ?? "#E4572E"} name={item.name} size={116} />
-                  <Text numberOfLines={2} style={styles.suggestionName}>{item.name}</Text>
-                  <Text style={styles.suggestionPrice}>{formatMoney(item.price)}</Text>
-                </Pressable>
-              ))}
-            </ScrollView>
-          </View>
-        ) : null}
-
         <View style={styles.composer}>
           <TextInput
             value={draft}
@@ -1593,73 +1558,6 @@ const styles = StyleSheet.create({
   },
   userBubbleText: {
     color: "#FFFFFF"
-  },
-  quickPrompts: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8
-  },
-  chatSuggestions: {
-    borderRadius: 8,
-    backgroundColor: "#FFF8EE",
-    borderWidth: 1,
-    borderColor: "#E7E1D5",
-    padding: 12,
-    gap: 10
-  },
-  chatSuggestionsHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 10
-  },
-  chatSuggestionsTitle: {
-    color: "#162016",
-    fontWeight: "900",
-    fontSize: 15
-  },
-  chatMoodQuote: {
-    color: "#7A2E18",
-    backgroundColor: "#FFF3EA",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    fontWeight: "900",
-    lineHeight: 18
-  },
-  chatAddButton: {
-    minHeight: 32,
-    borderRadius: 16,
-    backgroundColor: "#E4572E",
-    paddingHorizontal: 11,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5
-  },
-  chatAddButtonText: {
-    color: "#FFFFFF",
-    fontWeight: "900",
-    fontSize: 12
-  },
-  suggestionCard: {
-    width: 132,
-    marginRight: 10,
-    borderRadius: 8,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E7E1D5",
-    padding: 8,
-    gap: 7
-  },
-  suggestionName: {
-    color: "#162016",
-    fontWeight: "900",
-    minHeight: 36,
-    lineHeight: 18
-  },
-  suggestionPrice: {
-    color: "#E4572E",
-    fontWeight: "900"
   },
   promptChip: {
     height: 32,
