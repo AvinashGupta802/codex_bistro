@@ -130,7 +130,7 @@ The assistant now starts by asking the customer to describe their mood naturally
 - Sad
 - Stressed
 - Relaxed
-- Neutral
+- Balanced
 
 `POST /ai/mood` returns the classified mood, confidence, the mood reasoning, recommended menu items with reasons, and ready-to-apply cart actions. The backend uses the spreadsheet-derived classifier by default. If `OPENAI_API_KEY` is set, it calls the OpenAI Responses API first and falls back to the local classifier if the LLM is unavailable.
 

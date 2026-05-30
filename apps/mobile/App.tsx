@@ -286,6 +286,85 @@ export default function App() {
     }
   }
 
+  function renderAssistantPanel() {
+    return (
+      <View style={styles.assistantPanel}>
+        <View style={styles.assistantHeader}>
+          <View>
+            <Text style={styles.sectionTitle}>Bistro Assistant</Text>
+            <Text style={styles.muted}>Mood discovery, nutrient match, and cart control</Text>
+          </View>
+          {isSending ? (
+            <ActivityIndicator color="#E4572E" />
+          ) : (
+            <Ionicons name="chatbubble-ellipses-outline" size={23} color="#344E41" />
+          )}
+        </View>
+
+        <FlatList
+          data={messages}
+          keyExtractor={(item) => item.id}
+          scrollEnabled={false}
+          renderItem={({ item }) => (
+            <View style={[styles.bubble, item.role === "user" ? styles.userBubble : styles.assistantBubble]}>
+              <Text style={[styles.bubbleText, item.role === "user" && styles.userBubbleText]}>{item.text}</Text>
+            </View>
+          )}
+        />
+
+        {selectedMood ? (
+          <View style={styles.chatSuggestions}>
+            <View style={styles.chatSuggestionsHeader}>
+              <Text style={styles.chatSuggestionsTitle}>Suggested for {selectedMood.label}</Text>
+              <Pressable
+                onPress={() => addRecommendation(selectedMood.actions, selectedMood.label.toLowerCase())}
+                style={styles.chatAddButton}
+              >
+                <Ionicons name="bag-add-outline" size={14} color="#FFFFFF" />
+                <Text style={styles.chatAddButtonText}>Add top picks</Text>
+              </Pressable>
+            </View>
+            {selectedMood.nutrientNeed ? (
+              <Text style={styles.chatMoodQuote}>{selectedMood.nutrientNeed}</Text>
+            ) : selectedMood.highlight ? (
+              <Text style={styles.chatMoodQuote}>{selectedMood.highlight}</Text>
+            ) : null}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {selectedMood.recommendations.map((item) => (
+                <Pressable
+                  key={item.itemId}
+                  onPress={() =>
+                    addItem(menu.find((entry) => entry.id === item.itemId)!)
+                  }
+                  style={styles.suggestionCard}
+                >
+                  <DishImage image={item.image} icon={item.icon} accent={item.accent ?? "#E4572E"} name={item.name} size={116} />
+                  <Text numberOfLines={2} style={styles.suggestionName}>{item.name}</Text>
+                  <Text style={styles.suggestionPrice}>{formatMoney(item.price)}</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        ) : null}
+
+        <View style={styles.composer}>
+          <TextInput
+            value={draft}
+            onChangeText={setDraft}
+            placeholder="Tell me your mood or what to order"
+            placeholderTextColor="#8E9587"
+            style={styles.input}
+            returnKeyType="send"
+            onSubmitEditing={() => submitMessage()}
+          />
+          <Pressable onPress={() => submitMessage()} style={styles.sendButton}>
+            <Ionicons name="arrow-up" size={18} color="#FFFFFF" />
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="dark" />
@@ -343,6 +422,8 @@ export default function App() {
             </View>
           ) : null}
 
+          {renderAssistantPanel()}
+
           <Pressable style={styles.expandHeader} onPress={() => setIsMoodGuideOpen((open) => !open)}>
             <View>
               <Text style={styles.sectionTitle}>Mood Match</Text>
@@ -393,6 +474,24 @@ export default function App() {
               {selectedMood.highlight ? (
                 <View style={styles.moodQuoteBox}>
                   <Text style={styles.moodQuoteText}>{selectedMood.highlight}</Text>
+                </View>
+              ) : null}
+              {selectedMood.nutrientNeed ? (
+                <View style={styles.nutritionBox}>
+                  <View style={styles.nutritionHeader}>
+                    <Ionicons name="nutrition-outline" size={16} color="#344E41" />
+                    <Text style={styles.nutritionTitle}>Body cue</Text>
+                  </View>
+                  <Text style={styles.nutritionCopy}>{selectedMood.nutrientNeed}</Text>
+                  {selectedMood.nutritionFocus?.length ? (
+                    <View style={styles.nutritionChips}>
+                      {selectedMood.nutritionFocus.map((nutrient) => (
+                        <View key={nutrient} style={styles.nutritionChip}>
+                          <Text style={styles.nutritionChipText}>{nutrient}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  ) : null}
                 </View>
               ) : null}
               {selectedMood.recommendations.map((item) => (
@@ -479,78 +578,6 @@ export default function App() {
             )}
           </View>
 
-          <View style={styles.assistantPanel}>
-            <View style={styles.assistantHeader}>
-              <View>
-                <Text style={styles.sectionTitle}>Bistro Assistant</Text>
-                <Text style={styles.muted}>Mood discovery and cart control</Text>
-              </View>
-              {isSending ? (
-                <ActivityIndicator color="#E4572E" />
-              ) : (
-                <Ionicons name="chatbubble-ellipses-outline" size={23} color="#344E41" />
-              )}
-            </View>
-
-            <FlatList
-              data={messages}
-              keyExtractor={(item) => item.id}
-              scrollEnabled={false}
-              renderItem={({ item }) => (
-                <View style={[styles.bubble, item.role === "user" ? styles.userBubble : styles.assistantBubble]}>
-                  <Text style={[styles.bubbleText, item.role === "user" && styles.userBubbleText]}>{item.text}</Text>
-                </View>
-              )}
-            />
-
-            {selectedMood ? (
-              <View style={styles.chatSuggestions}>
-                <View style={styles.chatSuggestionsHeader}>
-                  <Text style={styles.chatSuggestionsTitle}>Suggested for {selectedMood.label}</Text>
-                  <Pressable
-                    onPress={() => addRecommendation(selectedMood.actions, selectedMood.label.toLowerCase())}
-                    style={styles.chatAddButton}
-                  >
-                    <Ionicons name="bag-add-outline" size={14} color="#FFFFFF" />
-                    <Text style={styles.chatAddButtonText}>Add top picks</Text>
-                  </Pressable>
-                </View>
-                {selectedMood.highlight ? (
-                  <Text style={styles.chatMoodQuote}>{selectedMood.highlight}</Text>
-                ) : null}
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                  {selectedMood.recommendations.map((item) => (
-                    <Pressable
-                      key={item.itemId}
-                      onPress={() =>
-                        addItem(menu.find((entry) => entry.id === item.itemId)!)
-                      }
-                      style={styles.suggestionCard}
-                    >
-                      <DishImage image={item.image} icon={item.icon} accent={item.accent ?? "#E4572E"} name={item.name} size={116} />
-                      <Text numberOfLines={2} style={styles.suggestionName}>{item.name}</Text>
-                      <Text style={styles.suggestionPrice}>{formatMoney(item.price)}</Text>
-                    </Pressable>
-                  ))}
-                </ScrollView>
-              </View>
-            ) : null}
-
-            <View style={styles.composer}>
-              <TextInput
-                value={draft}
-                onChangeText={setDraft}
-                placeholder="Tell me your mood or what to order"
-                placeholderTextColor="#8E9587"
-                style={styles.input}
-                returnKeyType="send"
-                onSubmitEditing={() => submitMessage()}
-              />
-              <Pressable onPress={() => submitMessage()} style={styles.sendButton}>
-                <Ionicons name="arrow-up" size={18} color="#FFFFFF" />
-              </Pressable>
-            </View>
-          </View>
         </ScrollView>
         {drinkPairing && !isCartOpen ? (
           <ComboPanel
@@ -650,7 +677,9 @@ function shouldTreatAsMood(message: string) {
     "sad",
     "stressed",
     "relaxed",
-    "neutral",
+    "balanced",
+    "steady",
+    "wholesome",
     "surprise",
     "anxious",
     "calm"
@@ -724,8 +753,8 @@ function localMood(label: string): MoodResult {
             ? ["classic-mac", "butter-chicken", "choco-lava"]
             : mood.id === "relaxed"
               ? ["authentic-ramen", "mezze-spread", "ginger-ale"]
-              : mood.id === "neutral"
-                ? ["spicy-chicken", "truffle-burger", "rainbow-sushi"]
+              : mood.id === "balanced"
+                ? ["greek-salad", "mediterranean-bowl", "spicy-chicken"]
                 : ["pizza", "truffle-burger", "fries"];
   const recommendations = itemIds.map((itemId) => {
     const item = menu.find((entry) => entry.id === itemId)!;
@@ -736,7 +765,7 @@ function localMood(label: string): MoodResult {
       icon: item.icon,
       accent: item.accent,
       image: item.image,
-      reason: `A strong match for a ${mood.label.toLowerCase()} mood.`
+      reason: localNutritionReason[mood.id]
     };
   });
   return {
@@ -744,7 +773,9 @@ function localMood(label: string): MoodResult {
     label: mood.label,
     confidence: 0.7,
     highlight: localMoodHighlight[mood.id],
-    reply: `${mood.label} sounds right. ${localMoodHighlight[mood.id]} I would suggest ${recommendations.map((item) => item.name).join(", ")}.`,
+    nutrientNeed: localNutrientNeed[mood.id],
+    nutritionFocus: localNutritionFocus[mood.id],
+    reply: `${mood.label} sounds right. ${localNutrientNeed[mood.id]} ${localMoodHighlight[mood.id]} I would suggest ${recommendations.map((item) => item.name).join(", ")}.`,
     recommendations,
     actions: itemIds.map((itemId) => ({ type: "add_item", itemId, quantity: 1 }))
   };
@@ -757,7 +788,37 @@ const localMoodHighlight = {
   relaxed: "Good food adds to your relaxation. Grab from below",
   sad: "No man is lonely while eating spaghetti. Grab from below",
   happy: "Laughter is brightest in the place where food is. Grab from below",
-  neutral: "Our food will be very close to your mother's cooking. Grab from below"
+  balanced: "Our food will be very close to your mother's cooking. Grab from below"
+};
+
+const localNutrientNeed = {
+  lazy: "Your body may need steady carbohydrates, protein, and hydration without a high-effort meal.",
+  energetic: "Your body may need quality carbohydrates, lean protein, and fluids to keep momentum steady.",
+  happy: "Your body may enjoy colorful antioxidants, protein, and healthy fats that match the upbeat mood.",
+  sad: "Your body may respond well to warm comfort with protein, slow carbohydrates, and mineral-rich ingredients.",
+  stressed: "Your body may be asking for satisfying crunch, protein, magnesium-rich ingredients, and hydration.",
+  relaxed: "Your body can enjoy variety: fiber, vegetables, balanced fats, and a slower meal rhythm.",
+  balanced: "Your body may simply need a complete plate: fiber, lean protein, vegetables, and hydration."
+};
+
+const localNutritionFocus = {
+  lazy: ["complex carbohydrates", "protein", "hydration"],
+  energetic: ["quality carbohydrates", "lean protein", "electrolytes"],
+  happy: ["protein", "healthy fats", "antioxidants"],
+  sad: ["protein", "slow carbohydrates", "magnesium"],
+  stressed: ["protein", "magnesium", "hydration"],
+  relaxed: ["omega-3 fats", "fiber", "micronutrients"],
+  balanced: ["fiber", "lean protein", "micronutrients"]
+};
+
+const localNutritionReason = {
+  lazy: "Supports steady energy with low effort.",
+  energetic: "Adds fuel and protein for active energy.",
+  happy: "Brings color, freshness, and satisfying protein.",
+  sad: "Keeps comfort warm while adding substance.",
+  stressed: "Balances cravings with protein and hydration support.",
+  relaxed: "Fits a slower meal with variety and texture.",
+  balanced: "Covers a steady mix of fiber, protein, and vegetables."
 };
 
 function DishImage({ image, icon, accent, name, size }: { image?: string; icon?: string; accent: string; name: string; size: number }) {
@@ -1116,6 +1177,50 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     lineHeight: 20
   },
+  nutritionBox: {
+    borderRadius: 8,
+    backgroundColor: "#F4F7EF",
+    borderWidth: 1,
+    borderColor: "#CFE0C3",
+    padding: 12,
+    gap: 8
+  },
+  nutritionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6
+  },
+  nutritionTitle: {
+    color: "#344E41",
+    fontSize: 13,
+    fontWeight: "900",
+    textTransform: "uppercase",
+    letterSpacing: 0
+  },
+  nutritionCopy: {
+    color: "#162016",
+    fontSize: 14,
+    fontWeight: "700",
+    lineHeight: 19
+  },
+  nutritionChips: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 7
+  },
+  nutritionChip: {
+    borderRadius: 14,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#DAD7CD",
+    paddingHorizontal: 10,
+    paddingVertical: 5
+  },
+  nutritionChipText: {
+    color: "#344E41",
+    fontSize: 12,
+    fontWeight: "800"
+  },
   recommendationButton: {
     minHeight: 38,
     borderRadius: 19,
@@ -1453,7 +1558,8 @@ const styles = StyleSheet.create({
     color: "#162016"
   },
   assistantPanel: {
-    marginTop: 20,
+    marginTop: 0,
+    marginBottom: 16,
     borderRadius: 8,
     backgroundColor: "#FFFFFF",
     borderWidth: 1,

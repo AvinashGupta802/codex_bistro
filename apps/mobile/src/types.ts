@@ -51,7 +51,7 @@ export type MoodId =
   | "sad"
   | "stressed"
   | "relaxed"
-  | "neutral";
+  | "balanced";
 
 export type LegacyMoodId =
   | "comfort"
@@ -86,6 +86,8 @@ export type MoodResult = {
   brain?: string;
   meaning?: string;
   foodType?: string;
+  nutrientNeed?: string;
+  nutritionFocus?: string[];
   highlight?: string;
   reply: string;
   recommendations: MoodRecommendation[];

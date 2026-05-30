@@ -7,7 +7,9 @@ export const moods = [
     prompt: "Lowest effort, tasty, easy",
     brain: "Low mental energy, lethargy, low blood sugar, and a preference for the path of least resistance.",
     meaning: "Needs low effort cost with nutritional value and taste as secondary drivers.",
-    foodType: "Highly palatable, simple carbohydrate, high sugar, soft and bland food, edible with one hand or a single spoon.",
+    foodType: "Low-effort meals with steady carbohydrates, protein, and hydration.",
+    nutrientNeed: "Support gentle energy without asking the customer to do much work.",
+    nutritionFocus: ["complex carbohydrates", "protein", "hydration"],
     highlight: "We will even save your walk to your refrigerator. Grab from below",
     keywords: ["lazy", "tired", "low energy", "lethargic", "exhausted", "easy", "low effort", "sleepy", "drained"],
     items: ["pizza", "truffle-burger", "fries", "alfredo-pasta", "mac-cheese", "tacos", "chicken-burrito", "milkshake", "sparkling-soda", "warm-latte"]
@@ -18,7 +20,9 @@ export const moods = [
     prompt: "Alert, active, ready",
     brain: "High norepinephrine, dopamine, motivation, and electrical activity.",
     meaning: "Medium effort is acceptable, and chewing helps maintain mental alertness.",
-    foodType: "Assembly-friendly, fresh, high-energy food with non-sugary drinks.",
+    foodType: "Fresh, high-energy food with quality carbohydrates, lean protein, and fluids.",
+    nutrientNeed: "Refuel active muscles and keep energy steady.",
+    nutritionFocus: ["quality carbohydrates", "lean protein", "electrolytes"],
     highlight: "Food is fuel. Grab from below",
     keywords: ["energetic", "energy", "active", "alert", "motivated", "fresh", "awake", "workout", "strong"],
     items: ["mediterranean-bowl", "vietnamese-bowl", "mexican-bowl", "greek-salad", "iced-tea", "cold-pressed-juice", "kombucha"]
@@ -29,7 +33,9 @@ export const moods = [
     prompt: "Bright, social, premium",
     brain: "The brain is in an upward state and dopamine is already high.",
     meaning: "Willing to wait and pay more for freshness, quality, and anticipation.",
-    foodType: "Bright flavor, freshness, stimulation, social connection, and good quality.",
+    foodType: "Colorful meals with protein, healthy fats, and antioxidant-rich vegetables.",
+    nutrientNeed: "Match the upbeat mood with colorful, celebratory food that still has substance.",
+    nutritionFocus: ["protein", "healthy fats", "antioxidants"],
     highlight: "Laughter is brightest in the place where food is. Grab from below",
     keywords: ["happy", "joy", "excited", "celebrate", "positive", "fun", "social", "premium", "fresh"],
     items: ["rainbow-sushi", "colorful-stir-fry", "rare-steak", "poke-bowl", "thai-curry"]
@@ -40,7 +46,9 @@ export const moods = [
     prompt: "Warm, soft comfort",
     brain: "Lower serotonin and increased cortisol can drive immediate sensory comfort seeking.",
     meaning: "Prefers mushy, creamy, warm food and avoids extreme sour or bitter flavors.",
-    foodType: "Dessert-friendly, one-bowl, warm food that feels emotionally comforting.",
+    foodType: "Warm comfort food with protein, calming carbohydrates, and minerals.",
+    nutrientNeed: "Offer comfort while avoiding a purely sugar-led crash.",
+    nutritionFocus: ["protein", "slow carbohydrates", "magnesium"],
     highlight: "No man is lonely while eating spaghetti. Grab from below",
     keywords: ["sad", "down", "upset", "lonely", "comfort", "cry", "low", "heartbroken", "bad day"],
     items: ["classic-mac", "butter-chicken", "choco-lava", "hot-cocoa", "malt-beverage"]
@@ -51,7 +59,9 @@ export const moods = [
     prompt: "Crunchy, salty, calming",
     brain: "Increased cortisol and carb cravings can be a physiological attempt to feel calm.",
     meaning: "Crunchy food releases jaw tension and the goal is anxiety reduction.",
-    foodType: "Salty and crunchy.",
+    foodType: "Crunchy, satisfying food balanced with protein, magnesium-rich ingredients, and hydration.",
+    nutrientNeed: "Satisfy stress cravings while adding nutrients that support steadier energy.",
+    nutritionFocus: ["protein", "magnesium", "hydration"],
     highlight: "Stressed is nothing but desserts spelled in the wrong way. Grab from below",
     keywords: ["stressed", "stress", "anxious", "anxiety", "pressure", "deadline", "tense", "overwhelmed", "worried"],
     items: ["fried-chicken", "loaded-nachos", "pizza"]
@@ -62,21 +72,25 @@ export const moods = [
     prompt: "Slow, varied, high-end",
     brain: "Digestion is better and flavor receptors are more sensitive.",
     meaning: "Ready to spend time on a better spread or higher-end food.",
-    foodType: "Varied and nutritious.",
+    foodType: "Varied meals with omega-3 friendly ingredients, vegetables, and balanced fats.",
+    nutrientNeed: "Support a calm, unhurried meal with variety and texture.",
+    nutritionFocus: ["omega-3 fats", "fiber", "micronutrients"],
     highlight: "Good food adds to your relaxation. Grab from below",
     keywords: ["relaxed", "calm", "peaceful", "slow", "unwind", "weekend", "easy", "chill", "free time"],
     items: ["rainbow-sushi", "authentic-ramen", "mezze-spread", "cheesecake", "ginger-ale"]
   },
   {
-    id: "neutral",
-    label: "Neutral",
-    prompt: "Trending picks",
-    brain: "Emotion is unclear or not strongly expressed.",
-    meaning: "Recommend what is popular and easy to accept.",
-    foodType: "Trending, balanced, generally liked food.",
+    id: "balanced",
+    label: "Balanced",
+    prompt: "Wholesome steady picks",
+    brain: "Emotion is even, practical, or not strongly expressed.",
+    meaning: "Recommend a steady, satisfying plate that covers energy, protein, color, and hydration.",
+    foodType: "Balanced meals with fiber-rich carbohydrates, lean protein, vegetables, and water.",
+    nutrientNeed: "Maintain steady energy and fullness without pushing the meal too heavy or too sweet.",
+    nutritionFocus: ["fiber", "lean protein", "micronutrients"],
     highlight: "Our food will be very close to your mother's cooking. Grab from below",
-    keywords: ["neutral", "normal", "anything", "whatever", "not sure", "confused", "recommend", "trending"],
-    items: ["spicy-chicken", "truffle-burger", "rainbow-sushi", "still-water"]
+    keywords: ["balanced", "neutral", "normal", "anything", "whatever", "not sure", "confused", "recommend", "wholesome", "steady"],
+    items: ["greek-salad", "mediterranean-bowl", "spicy-chicken", "still-water"]
   }
 ];
 
@@ -90,7 +104,7 @@ export async function classifyMood(input) {
   });
 
   if (llm?.mood) {
-    const mood = moods.find((entry) => entry.id === llm.mood) ?? moods.find((entry) => entry.id === "neutral");
+    const mood = moods.find((entry) => entry.id === llm.mood) ?? moods.find((entry) => entry.id === "balanced");
     return {
       ...buildMoodResponse(mood, llm.confidence ?? 0.82, llm.customerReply),
       classifier: {
@@ -122,8 +136,8 @@ export function classifyMoodLocally(input) {
     .sort((a, b) => b.score - a.score);
 
   const best = scored[0];
-  const neutral = moods.find((mood) => mood.id === "neutral");
-  return buildMoodResponse(best.score > 0 ? best.mood : neutral, best.score > 0 ? Math.min(0.94, 0.66 + best.score * 0.12) : 0.5);
+  const balanced = moods.find((mood) => mood.id === "balanced");
+  return buildMoodResponse(best.score > 0 ? best.mood : balanced, best.score > 0 ? Math.min(0.94, 0.66 + best.score * 0.12) : 0.5);
 }
 
 export function buildMoodResponse(mood, confidence, customReply) {
@@ -147,10 +161,12 @@ export function buildMoodResponse(mood, confidence, customReply) {
     brain: mood.brain,
     meaning: mood.meaning,
     foodType: mood.foodType,
+    nutrientNeed: mood.nutrientNeed,
+    nutritionFocus: mood.nutritionFocus,
     highlight: mood.highlight,
     reply: customReply
       ? `${customReply} ${mood.highlight}`
-      : `${mood.label} mood makes sense. ${mood.meaning} ${mood.highlight} I would suggest ${recommendations.slice(0, 3).map((item) => item.name).join(", ")}.`,
+      : `${mood.label} mood makes sense. ${mood.nutrientNeed} ${mood.highlight} I would suggest ${recommendations.slice(0, 3).map((item) => item.name).join(", ")}.`,
     recommendations,
     actions: recommendations.slice(0, 3).map((item) => ({ type: "add_item", itemId: item.itemId, quantity: 1 }))
   };
@@ -229,7 +245,7 @@ async function classifyMoodWithLlm(input) {
 
 function recommendationReason(moodId, itemName) {
   const mood = moods.find((entry) => entry.id === moodId);
-  return `${itemName} fits because this mood leans toward ${mood.foodType.toLowerCase()}`;
+  return `${itemName} fits because this mood benefits from ${mood.nutritionFocus.join(", ")}.`;
 }
 
 function logLlm(event, details) {
