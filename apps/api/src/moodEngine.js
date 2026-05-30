@@ -10,7 +10,11 @@ export const moods = [
     foodType: "Low-effort meals with steady carbohydrates, protein, and hydration.",
     nutrientNeed: "Support gentle energy without asking the customer to do much work.",
     nutritionFocus: ["complex carbohydrates", "protein", "hydration"],
-    highlight: "We will even save your walk to your refrigerator. Grab from below",
+    taglines: [
+      "Low battery mode deserves low-effort fuel. Grab from below.",
+      "Let's keep the work light and the plate satisfying. Grab from below.",
+      "No big decisions today; just steady comfort. Grab from below."
+    ],
     keywords: ["lazy", "tired", "low energy", "lethargic", "exhausted", "easy", "low effort", "sleepy", "drained"],
     items: ["pizza", "truffle-burger", "fries", "alfredo-pasta", "mac-cheese", "tacos", "chicken-burrito", "milkshake", "sparkling-soda", "warm-latte"]
   },
@@ -23,7 +27,11 @@ export const moods = [
     foodType: "Fresh, high-energy food with quality carbohydrates, lean protein, and fluids.",
     nutrientNeed: "Refuel active muscles and keep energy steady.",
     nutritionFocus: ["quality carbohydrates", "lean protein", "electrolytes"],
-    highlight: "Food is fuel. Grab from below",
+    taglines: [
+      "Food is fuel, and today the engine is already warm. Grab from below.",
+      "Let's match that momentum with clean, steady fuel. Grab from below.",
+      "Active energy needs a plate that can keep up. Grab from below."
+    ],
     keywords: ["energetic", "energy", "active", "alert", "motivated", "fresh", "awake", "workout", "strong"],
     items: ["mediterranean-bowl", "vietnamese-bowl", "mexican-bowl", "greek-salad", "iced-tea", "cold-pressed-juice", "kombucha"]
   },
@@ -36,7 +44,11 @@ export const moods = [
     foodType: "Colorful meals with protein, healthy fats, and antioxidant-rich vegetables.",
     nutrientNeed: "Match the upbeat mood with colorful, celebratory food that still has substance.",
     nutritionFocus: ["protein", "healthy fats", "antioxidants"],
-    highlight: "Laughter is brightest in the place where food is. Grab from below",
+    taglines: [
+      "Laughter is brightest in the place where food is. Grab from below.",
+      "Good mood, good color, good plate. Grab from below.",
+      "Let's make the meal feel as bright as the mood. Grab from below."
+    ],
     keywords: ["happy", "joy", "excited", "celebrate", "positive", "fun", "social", "premium", "fresh"],
     items: ["rainbow-sushi", "colorful-stir-fry", "rare-steak", "poke-bowl", "thai-curry"]
   },
@@ -49,7 +61,11 @@ export const moods = [
     foodType: "Warm comfort food with protein, calming carbohydrates, and minerals.",
     nutrientNeed: "Offer comfort while avoiding a purely sugar-led crash.",
     nutritionFocus: ["protein", "slow carbohydrates", "magnesium"],
-    highlight: "No man is lonely while eating spaghetti. Grab from below",
+    taglines: [
+      "No man is lonely while eating spaghetti. Grab from below.",
+      "A warm plate cannot fix everything, but it can sit with you kindly. Grab from below.",
+      "Let's keep this soft, warm, and steady. Grab from below."
+    ],
     keywords: ["sad", "down", "upset", "lonely", "comfort", "cry", "low", "heartbroken", "bad day"],
     items: ["classic-mac", "butter-chicken", "choco-lava", "hot-cocoa", "malt-beverage"]
   },
@@ -62,7 +78,11 @@ export const moods = [
     foodType: "Crunchy, satisfying food balanced with protein, magnesium-rich ingredients, and hydration.",
     nutrientNeed: "Satisfy stress cravings while adding nutrients that support steadier energy.",
     nutritionFocus: ["protein", "magnesium", "hydration"],
-    highlight: "Stressed is nothing but desserts spelled in the wrong way. Grab from below",
+    taglines: [
+      "Stressed is nothing but desserts spelled in the wrong way. Grab from below.",
+      "Crunch, comfort, and a calmer landing. Grab from below.",
+      "Let's take the edge off without sending your energy on a roller coaster. Grab from below."
+    ],
     keywords: ["stressed", "stress", "anxious", "anxiety", "pressure", "deadline", "tense", "overwhelmed", "worried"],
     items: ["fried-chicken", "loaded-nachos", "pizza"]
   },
@@ -75,7 +95,11 @@ export const moods = [
     foodType: "Varied meals with omega-3 friendly ingredients, vegetables, and balanced fats.",
     nutrientNeed: "Support a calm, unhurried meal with variety and texture.",
     nutritionFocus: ["omega-3 fats", "fiber", "micronutrients"],
-    highlight: "Good food adds to your relaxation. Grab from below",
+    taglines: [
+      "Good food adds to your relaxation. Grab from below.",
+      "Slow mood, layered flavors, no rush. Grab from below.",
+      "Let's keep the plate calm, colorful, and worth lingering over. Grab from below."
+    ],
     keywords: ["relaxed", "calm", "peaceful", "slow", "unwind", "weekend", "easy", "chill", "free time"],
     items: ["rainbow-sushi", "authentic-ramen", "mezze-spread", "cheesecake", "ginger-ale"]
   },
@@ -88,7 +112,11 @@ export const moods = [
     foodType: "Balanced meals with fiber-rich carbohydrates, lean protein, vegetables, and water.",
     nutrientNeed: "Maintain steady energy and fullness without pushing the meal too heavy or too sweet.",
     nutritionFocus: ["fiber", "lean protein", "micronutrients"],
-    highlight: "Our food will be very close to your mother's cooking. Grab from below",
+    taglines: [
+      "Our food will be very close to your mother's cooking. Grab from below.",
+      "Balanced mood, balanced plate. Grab from below.",
+      "Let's keep it complete, clean, and satisfying. Grab from below."
+    ],
     keywords: ["balanced", "neutral", "normal", "anything", "whatever", "not sure", "confused", "recommend", "wholesome", "steady"],
     items: ["greek-salad", "mediterranean-bowl", "spicy-chicken", "still-water"]
   }
@@ -106,7 +134,7 @@ export async function classifyMood(input) {
   if (llm?.mood) {
     const mood = moods.find((entry) => entry.id === llm.mood) ?? moods.find((entry) => entry.id === "balanced");
     return {
-      ...buildMoodResponse(mood, llm.confidence ?? 0.82, llm.customerReply),
+      ...buildMoodResponse(mood, llm.confidence ?? 0.82, llm.customerReply, input),
       classifier: {
         source: "llm",
         model: process.env.OPENAI_MODEL || "gpt-4.1-mini"
@@ -126,7 +154,7 @@ export async function classifyMood(input) {
 export function classifyMoodLocally(input) {
   const text = normalize(input);
   const direct = moods.find((mood) => normalize(mood.label) === text || mood.id === text);
-  if (direct) return buildMoodResponse(direct, 0.98);
+  if (direct) return buildMoodResponse(direct, 0.98, null, input);
 
   const scored = moods
     .map((mood) => ({
@@ -137,10 +165,11 @@ export function classifyMoodLocally(input) {
 
   const best = scored[0];
   const balanced = moods.find((mood) => mood.id === "balanced");
-  return buildMoodResponse(best.score > 0 ? best.mood : balanced, best.score > 0 ? Math.min(0.94, 0.66 + best.score * 0.12) : 0.5);
+  return buildMoodResponse(best.score > 0 ? best.mood : balanced, best.score > 0 ? Math.min(0.94, 0.66 + best.score * 0.12) : 0.5, null, input);
 }
 
-export function buildMoodResponse(mood, confidence, customReply) {
+export function buildMoodResponse(mood, confidence, customReply, input = "") {
+  const highlight = contextualTagline(mood, input);
   const recommendations = mood.items.map((itemId) => {
     const item = menu.find((entry) => entry.id === itemId);
     return {
@@ -163,10 +192,10 @@ export function buildMoodResponse(mood, confidence, customReply) {
     foodType: mood.foodType,
     nutrientNeed: mood.nutrientNeed,
     nutritionFocus: mood.nutritionFocus,
-    highlight: mood.highlight,
+    highlight,
     reply: customReply
-      ? `${customReply} ${mood.highlight}`
-      : `${mood.label} mood makes sense. ${mood.nutrientNeed} ${mood.highlight} I would suggest ${recommendations.slice(0, 3).map((item) => item.name).join(", ")}.`,
+      ? `${customReply} ${highlight}`
+      : `${mood.label} mood makes sense. ${mood.nutrientNeed} ${highlight} I would suggest ${recommendations.slice(0, 3).map((item) => item.name).join(", ")}.`,
     recommendations,
     actions: recommendations.slice(0, 3).map((item) => ({ type: "add_item", itemId: item.itemId, quantity: 1 }))
   };
@@ -246,6 +275,20 @@ async function classifyMoodWithLlm(input) {
 function recommendationReason(moodId, itemName) {
   const mood = moods.find((entry) => entry.id === moodId);
   return `${itemName} fits because this mood benefits from ${mood.nutritionFocus.join(", ")}.`;
+}
+
+function contextualTagline(mood, input) {
+  const options = mood.taglines ?? [];
+  if (options.length === 0) return "Grab from below.";
+  return options[stableIndex(String(input || mood.id), options.length)];
+}
+
+function stableIndex(value, size) {
+  let hash = 0;
+  for (const char of normalize(value)) {
+    hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  }
+  return hash % size;
 }
 
 function logLlm(event, details) {

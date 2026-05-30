@@ -20,7 +20,7 @@ import { ApiError, apiUrl, checkApiHealth, sendAssistantMessage, sendMoodMessage
 import { applyCartAction, applyCartActions, formatMoney } from "./src/cart";
 import { categories, menu } from "./src/data/menu";
 import { moodOptions } from "./src/data/moods";
-import { CartAction, CartLine, ChatMessage, MenuItem, MoodResult } from "./src/types";
+import { CartAction, CartLine, ChatMessage, MenuItem, MoodId, MoodResult } from "./src/types";
 
 const starterMessages: ChatMessage[] = [
   {
@@ -215,7 +215,7 @@ export default function App() {
         { id: `${Date.now()}-mood-assistant`, role: "assistant", text: result.reply }
       ]);
     } catch (error) {
-      const fallback = localMood(label);
+      const fallback = localMood(label, label);
       setApiStatus("offline");
       setApiStatusText("Offline mode");
       setSelectedMood(fallback);
@@ -268,9 +268,24 @@ export default function App() {
         { id: `${Date.now()}-assistant`, role: "assistant", text: result.reply }
       ]);
     } catch (error) {
-      const fallback = localAssistant(trimmed);
       setApiStatus("offline");
       setApiStatusText("Offline mode");
+      if (shouldTreatAsMood(trimmed)) {
+        const fallbackMood = localMood(trimmed, trimmed);
+        setSelectedMood(fallbackMood);
+        setIsMoodGuideOpen(false);
+        setMessages((current) => [
+          ...current,
+          {
+            id: `${Date.now()}-mood-offline`,
+            role: "assistant",
+            text: `${fallbackMood.reply} ${formatOfflineReason(error)}`
+          }
+        ]);
+        return;
+      }
+
+      const fallback = localAssistant(trimmed);
       setCart((current) => applyCartActions(current, fallback.actions, menu));
       suggestDrinkFromActions(fallback.actions);
       setMessages((current) => [
@@ -355,16 +370,15 @@ export default function App() {
               </Pressable>
             </View>
           </View>
-          <Pressable style={styles.heroCard} onPress={() => setIsMoodGuideOpen((open) => !open)}>
+          <View style={styles.heroCard}>
             <View style={styles.heroIcon}>
               <Ionicons name="sparkles" size={22} color="#FFFFFF" />
             </View>
             <View style={styles.heroCopy}>
-              <Text style={styles.heroTitle}>Tell me your mood.</Text>
-              <Text style={styles.heroText}>Type naturally, or tap to explore the 7 mood categories.</Text>
+              <Text style={styles.heroTitle}>AI-first ordering.</Text>
+              <Text style={styles.heroText}>Type naturally below; the assistant turns mood into nutrient-led picks.</Text>
             </View>
-            <Ionicons name={isMoodGuideOpen ? "chevron-up" : "chevron-down"} size={20} color="#FFFFFF" />
-          </Pressable>
+          </View>
         </LinearGradient>
 
         <ScrollView
@@ -705,7 +719,20 @@ function formatCartSummary(cart: CartLine[], subtotal: number, serviceFee: numbe
   ].join("\n");
 }
 
-function localMood(label: string): MoodResult {
+function contextualMoodLine(moodId: MoodId, input: string) {
+  const taglines = localMoodTaglines[moodId];
+  return taglines[stableIndex(input || moodId, taglines.length)];
+}
+
+function stableIndex(value: string, size: number) {
+  let hash = 0;
+  for (const char of value.toLowerCase()) {
+    hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  }
+  return hash % size;
+}
+
+function localMood(label: string, sourceText = label): MoodResult {
   const mood = moodOptions.find((option) => label.toLowerCase().includes(option.label.toLowerCase())) ?? moodOptions[0];
   const itemIds =
     mood.id === "stressed"
@@ -737,23 +764,51 @@ function localMood(label: string): MoodResult {
     mood: mood.id,
     label: mood.label,
     confidence: 0.7,
-    highlight: localMoodHighlight[mood.id],
+    highlight: contextualMoodLine(mood.id, sourceText),
     nutrientNeed: localNutrientNeed[mood.id],
     nutritionFocus: localNutritionFocus[mood.id],
-    reply: `${mood.label} sounds right. ${localNutrientNeed[mood.id]} ${localMoodHighlight[mood.id]} I would suggest ${recommendations.map((item) => item.name).join(", ")}.`,
+    reply: `${mood.label} sounds right. ${localNutrientNeed[mood.id]} ${contextualMoodLine(mood.id, sourceText)} I would suggest ${recommendations.map((item) => item.name).join(", ")}.`,
     recommendations,
     actions: itemIds.map((itemId) => ({ type: "add_item", itemId, quantity: 1 }))
   };
 }
 
-const localMoodHighlight = {
-  lazy: "We will even save your walk to your refrigerator. Grab from below",
-  energetic: "Food is fuel. Grab from below",
-  stressed: "Stressed is nothing but desserts spelled in the wrong way. Grab from below",
-  relaxed: "Good food adds to your relaxation. Grab from below",
-  sad: "No man is lonely while eating spaghetti. Grab from below",
-  happy: "Laughter is brightest in the place where food is. Grab from below",
-  balanced: "Our food will be very close to your mother's cooking. Grab from below"
+const localMoodTaglines = {
+  lazy: [
+    "Low battery mode deserves low-effort fuel. Grab from below.",
+    "Let's keep the work light and the plate satisfying. Grab from below.",
+    "No big decisions today; just steady comfort. Grab from below."
+  ],
+  energetic: [
+    "Food is fuel, and today the engine is already warm. Grab from below.",
+    "Let's match that momentum with clean, steady fuel. Grab from below.",
+    "Active energy needs a plate that can keep up. Grab from below."
+  ],
+  stressed: [
+    "Stressed is nothing but desserts spelled in the wrong way. Grab from below.",
+    "Crunch, comfort, and a calmer landing. Grab from below.",
+    "Let's take the edge off without sending your energy on a roller coaster. Grab from below."
+  ],
+  relaxed: [
+    "Good food adds to your relaxation. Grab from below.",
+    "Slow mood, layered flavors, no rush. Grab from below.",
+    "Let's keep the plate calm, colorful, and worth lingering over. Grab from below."
+  ],
+  sad: [
+    "No man is lonely while eating spaghetti. Grab from below.",
+    "A warm plate cannot fix everything, but it can sit with you kindly. Grab from below.",
+    "Let's keep this soft, warm, and steady. Grab from below."
+  ],
+  happy: [
+    "Laughter is brightest in the place where food is. Grab from below.",
+    "Good mood, good color, good plate. Grab from below.",
+    "Let's make the meal feel as bright as the mood. Grab from below."
+  ],
+  balanced: [
+    "Our food will be very close to your mother's cooking. Grab from below.",
+    "Balanced mood, balanced plate. Grab from below.",
+    "Let's keep it complete, clean, and satisfying. Grab from below."
+  ]
 };
 
 const localNutrientNeed = {
