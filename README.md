@@ -11,13 +11,11 @@ A polished Expo mobile ordering experience backed by a Node.js API that converts
 ## Quick Start
 
 ```bash
-# API
+# API from the repository root
 node apps/api/src/server.js
 
-# Mobile, after installing dependencies
-cd apps/mobile
-npm install
-npx expo start
+# Web app from the repository root
+corepack npm run web --workspace @intelligent-bistro/mobile -- --clear
 ```
 
 The mobile app defaults to `http://localhost:4000`. Set `EXPO_PUBLIC_API_URL` if your device needs a LAN URL, for example:
@@ -28,9 +26,42 @@ EXPO_PUBLIC_API_URL=http://192.168.1.15:4000 npx expo start
 
 On Android emulator builds, the app defaults to `http://10.0.2.2:4000` because Android cannot reach your computer through `localhost`. For Expo Go on a physical phone, set `EXPO_PUBLIC_API_URL` to your laptop's LAN IP.
 
+## Feedback Demo Hosting
+
+For teammates outside your network, expose both the API and the Expo web app. `ngrok` or `cloudflared` are more reliable than `loca.lt` for browser API calls because localtunnel can return `511 Network Authentication Required`.
+
+```powershell
+# Terminal 1: API
+node apps/api/src/server.js
+
+# Terminal 2: public API tunnel
+ngrok http 4000
+
+# Terminal 3: Expo web, using the HTTPS API tunnel from Terminal 2
+$env:EXPO_PUBLIC_API_URL="https://your-api-tunnel.ngrok-free.app"
+corepack npm run web --workspace @intelligent-bistro/mobile -- --clear
+
+# Terminal 4: public frontend tunnel, using the port Expo prints
+ngrok http 8081
+```
+
+Share the frontend tunnel URL with reviewers. If the API tunnel URL changes, restart Expo because `EXPO_PUBLIC_API_URL` is bundled at startup.
+
+## Production Preview Branch
+
+The `codex/production-finish` branch keeps `main` intact and layers on demo-ready polish:
+
+- visible API connection status in the mobile header
+- 12-second API request timeout with clearer offline fallback messages
+- checkout confirmation with order id and pickup ETA
+- localtunnel-friendly simple POST requests for feedback demos
+- richer `/health` response with uptime, version, and LLM configuration state
+- security-minded response headers and longer CORS preflight cache
+
 ## API
 
 ```http
+GET /
 GET /health
 GET /menu
 GET /moods

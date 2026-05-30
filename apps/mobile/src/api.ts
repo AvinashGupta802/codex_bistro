@@ -8,17 +8,47 @@ declare const process: {
 };
 
 const defaultApiUrl = Platform.OS === "android" ? "http://10.0.2.2:4000" : "http://localhost:4000";
-const apiUrl = process.env.EXPO_PUBLIC_API_URL ?? defaultApiUrl;
+export const apiUrl = process.env.EXPO_PUBLIC_API_URL ?? defaultApiUrl;
+const simplePostHeaders = {
+  "Content-Type": "text/plain;charset=UTF-8"
+};
+const requestTimeoutMs = 12000;
+
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status?: number,
+    readonly detail?: string
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
+export async function checkApiHealth() {
+  const response = await fetchWithTimeout(`${apiUrl}/health`);
+  if (!response.ok) {
+    throw new ApiError(`Health request failed: ${response.status}`, response.status, await safeReadText(response));
+  }
+
+  return (await response.json()) as {
+    ok: boolean;
+    service: string;
+    version?: string;
+    uptimeSeconds?: number;
+    openaiConfigured?: boolean;
+  };
+}
 
 export async function sendAssistantMessage(message: string, cart: CartLine[]) {
-  const response = await fetch(`${apiUrl}/ai/order`, {
+  const response = await fetchWithTimeout(`${apiUrl}/ai/order`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: simplePostHeaders,
     body: JSON.stringify({ message, cart })
   });
 
   if (!response.ok) {
-    throw new Error(`Assistant request failed: ${response.status}`);
+    throw new ApiError(`Assistant request failed: ${response.status}`, response.status, await safeReadText(response));
   }
 
   return (await response.json()) as {
@@ -30,15 +60,39 @@ export async function sendAssistantMessage(message: string, cart: CartLine[]) {
 }
 
 export async function sendMoodMessage(message: string) {
-  const response = await fetch(`${apiUrl}/ai/mood`, {
+  const response = await fetchWithTimeout(`${apiUrl}/ai/mood`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: simplePostHeaders,
     body: JSON.stringify({ message })
   });
 
   if (!response.ok) {
-    throw new Error(`Mood request failed: ${response.status}`);
+    throw new ApiError(`Mood request failed: ${response.status}`, response.status, await safeReadText(response));
   }
 
   return (await response.json()) as MoodResult;
+}
+
+async function fetchWithTimeout(input: string, init?: RequestInit) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), requestTimeoutMs);
+
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new ApiError("The bistro API took too long to respond.");
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function safeReadText(response: Response) {
+  try {
+    return await response.text();
+  } catch {
+    return undefined;
+  }
 }

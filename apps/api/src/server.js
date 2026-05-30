@@ -6,6 +6,7 @@ import { menu } from "./menu.js";
 import { classifyMood, moods } from "./moodEngine.js";
 
 const port = Number(process.env.PORT || 4000);
+const serviceVersion = process.env.APP_VERSION || "production-preview";
 let requestSequence = 0;
 
 const server = http.createServer(async (req, res) => {
@@ -30,8 +31,14 @@ const server = http.createServer(async (req, res) => {
   }
 
   try {
-    if (req.method === "GET" && req.url === "/health") {
-      sendJson(res, 200, { ok: true, service: "intelligent-bistro-api" });
+    if (req.method === "GET" && (req.url === "/" || req.url === "/health")) {
+      sendJson(res, 200, {
+        ok: true,
+        service: "intelligent-bistro-api",
+        version: serviceVersion,
+        uptimeSeconds: Math.round(process.uptime()),
+        openaiConfigured: Boolean(process.env.OPENAI_API_KEY)
+      });
       logResponse(requestId, req, res, startedAt, responseBody);
       return;
     }
@@ -90,6 +97,7 @@ server.listen(port, () => {
     level: "info",
     event: "api_startup",
     port,
+    version: serviceVersion,
     openaiConfigured: Boolean(process.env.OPENAI_API_KEY),
     openaiModel: process.env.OPENAI_MODEL || "gpt-4.1-mini"
   }));
@@ -98,7 +106,11 @@ server.listen(port, () => {
 function setCors(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, ngrok-skip-browser-warning");
+  res.setHeader("Access-Control-Max-Age", "86400");
+  res.setHeader("Vary", "Origin");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Referrer-Policy", "no-referrer");
 }
 
 function sendJson(res, status, payload) {

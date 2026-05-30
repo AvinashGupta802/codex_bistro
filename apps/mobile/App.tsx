@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -16,7 +16,7 @@ import {
   TextInput,
   View
 } from "react-native";
-import { sendAssistantMessage, sendMoodMessage } from "./src/api";
+import { ApiError, apiUrl, checkApiHealth, sendAssistantMessage, sendMoodMessage } from "./src/api";
 import { applyCartAction, applyCartActions, formatMoney } from "./src/cart";
 import { categories, menu } from "./src/data/menu";
 import { moodOptions } from "./src/data/moods";
@@ -29,6 +29,8 @@ const starterMessages: ChatMessage[] = [
     text: "Welcome in. What kind of meal are you in the mood for today?"
   }
 ];
+
+type ApiStatus = "checking" | "online" | "offline";
 
 const dishAssets: Record<string, number> = {
   "fast-food": require("./assets/dishes/fast-food.png"),
@@ -84,6 +86,9 @@ export default function App() {
   const [isMoodGuideOpen, setIsMoodGuideOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [drinkPairing, setDrinkPairing] = useState<MenuItem | null>(null);
+  const [apiStatus, setApiStatus] = useState<ApiStatus>("checking");
+  const [apiStatusText, setApiStatusText] = useState("Checking kitchen");
+  const [lastOrder, setLastOrder] = useState<{ id: string; total: number; eta: string } | null>(null);
 
   const visibleMenu = useMemo(
     () => menu.filter((item) => item.category === activeCategory),
@@ -93,6 +98,26 @@ export default function App() {
   const itemCount = useMemo(() => cart.reduce((sum, line) => sum + line.quantity, 0), [cart]);
   const serviceFee = useMemo(() => subtotal * 0.05, [subtotal]);
   const total = useMemo(() => subtotal + serviceFee, [subtotal, serviceFee]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    checkApiHealth()
+      .then((health) => {
+        if (!isMounted) return;
+        setApiStatus(health.ok ? "online" : "offline");
+        setApiStatusText(health.openaiConfigured ? "AI kitchen live" : "Local mood engine");
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        setApiStatus("offline");
+        setApiStatusText("Offline mode");
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   function suggestDrinkForFood(item: MenuItem | null | undefined) {
     if (!item || item.category === "Drinks") return;
@@ -113,6 +138,7 @@ export default function App() {
   }
 
   function addItem(item: MenuItem) {
+    setLastOrder(null);
     setCart((current) =>
       applyCartAction(current, { type: "add_item", itemId: item.id, quantity: 1 }, menu)
     );
@@ -130,6 +156,7 @@ export default function App() {
   }
 
   function addRecommendation(actions: CartAction[], label = "suggested picks") {
+    setLastOrder(null);
     setCart((current) => applyCartActions(current, actions, menu));
     suggestDrinkFromActions(actions);
     setMessages((current) => [
@@ -156,12 +183,14 @@ export default function App() {
 
   function confirmOrder() {
     if (cart.length === 0) return;
+    const orderId = `IB-${Date.now().toString().slice(-6)}`;
+    setLastOrder({ id: orderId, total, eta: "18-24 min" });
     setMessages((current) => [
       ...current,
       {
         id: `${Date.now()}-order-confirmed`,
         role: "assistant",
-        text: `Your order is confirmed. Total paid: ${formatMoney(total)}.`
+        text: `Order ${orderId} is confirmed. Total paid: ${formatMoney(total)}. Estimated pickup: 18-24 min.`
       }
     ]);
     setCart([]);
@@ -185,15 +214,17 @@ export default function App() {
         ...current,
         { id: `${Date.now()}-mood-assistant`, role: "assistant", text: result.reply }
       ]);
-    } catch {
+    } catch (error) {
       const fallback = localMood(label);
+      setApiStatus("offline");
+      setApiStatusText("Offline mode");
       setSelectedMood(fallback);
       setMessages((current) => [
         ...current,
         {
           id: `${Date.now()}-mood-offline`,
           role: "assistant",
-          text: `${fallback.reply} I used the on-device mood guide because the API is unreachable.`
+          text: `${fallback.reply} ${formatOfflineReason(error)}`
         }
       ]);
     } finally {
@@ -236,8 +267,10 @@ export default function App() {
         ...current,
         { id: `${Date.now()}-assistant`, role: "assistant", text: result.reply }
       ]);
-    } catch {
+    } catch (error) {
       const fallback = localAssistant(trimmed);
+      setApiStatus("offline");
+      setApiStatusText("Offline mode");
       setCart((current) => applyCartActions(current, fallback.actions, menu));
       suggestDrinkFromActions(fallback.actions);
       setMessages((current) => [
@@ -245,7 +278,7 @@ export default function App() {
         {
           id: `${Date.now()}-offline`,
           role: "assistant",
-          text: `${fallback.reply} I used the on-device parser because the API is unreachable.`
+          text: `${fallback.reply} ${formatOfflineReason(error)}`
         }
       ]);
     } finally {
@@ -266,14 +299,17 @@ export default function App() {
               <Text style={styles.kicker}>AI mood-led ordering</Text>
               <Text style={styles.title}>Intelligent Bistro</Text>
             </View>
-            <Pressable
-              style={styles.cartPill}
-              onPress={() => setIsCartOpen(true)}
-              hitSlop={10}
-            >
-              <Ionicons name="bag-handle-outline" size={18} color="#162016" />
-              <Text style={styles.cartPillText}>{itemCount}</Text>
-            </Pressable>
+            <View style={styles.headerActions}>
+              <ApiStatusPill status={apiStatus} label={apiStatusText} />
+              <Pressable
+                style={styles.cartPill}
+                onPress={() => setIsCartOpen(true)}
+                hitSlop={10}
+              >
+                <Ionicons name="bag-handle-outline" size={18} color="#162016" />
+                <Text style={styles.cartPillText}>{itemCount}</Text>
+              </Pressable>
+            </View>
           </View>
           <Pressable style={styles.heroCard} onPress={() => setIsMoodGuideOpen((open) => !open)}>
             <View style={styles.heroIcon}>
@@ -293,6 +329,20 @@ export default function App() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
+          {lastOrder ? (
+            <View style={styles.orderSuccess}>
+              <View style={styles.successIcon}>
+                <Ionicons name="checkmark" size={18} color="#FFFFFF" />
+              </View>
+              <View style={styles.orderSuccessText}>
+                <Text style={styles.orderSuccessTitle}>Order {lastOrder.id} confirmed</Text>
+                <Text style={styles.muted}>
+                  {formatMoney(lastOrder.total)} paid / pickup in {lastOrder.eta}
+                </Text>
+              </View>
+            </View>
+          ) : null}
+
           <Pressable style={styles.expandHeader} onPress={() => setIsMoodGuideOpen((open) => !open)}>
             <View>
               <Text style={styles.sectionTitle}>Mood Match</Text>
@@ -752,6 +802,19 @@ function ComboPanel({
   );
 }
 
+function ApiStatusPill({ status, label }: { status: ApiStatus; label: string }) {
+  const icon =
+    status === "online" ? "radio-button-on" : status === "offline" ? "cloud-offline-outline" : "sync";
+  return (
+    <View style={[styles.apiPill, status === "offline" && styles.apiPillOffline]}>
+      <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={13} color={status === "offline" ? "#8A1C1C" : "#344E41"} />
+      <Text numberOfLines={1} style={[styles.apiPillText, status === "offline" && styles.apiPillTextOffline]}>
+        {label}
+      </Text>
+    </View>
+  );
+}
+
 function BillRow({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
   return (
     <View style={styles.billRow}>
@@ -777,6 +840,14 @@ function localAssistant(message: string) {
   };
 }
 
+function formatOfflineReason(error: unknown) {
+  if (error instanceof ApiError && error.status) {
+    return `I switched to the on-device parser because the API returned ${error.status}.`;
+  }
+
+  return `I switched to the on-device parser because I could not reach ${apiUrl}.`;
+}
+
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -795,7 +866,12 @@ const styles = StyleSheet.create({
   headerTop: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center"
+    alignItems: "center",
+    gap: 12
+  },
+  headerActions: {
+    alignItems: "flex-end",
+    gap: 8
   },
   kicker: {
     color: "#6B705C",
@@ -828,6 +904,30 @@ const styles = StyleSheet.create({
   cartPillText: {
     fontWeight: "800",
     color: "#162016"
+  },
+  apiPill: {
+    maxWidth: 142,
+    minHeight: 28,
+    borderRadius: 14,
+    paddingHorizontal: 10,
+    backgroundColor: "rgba(255,255,255,0.78)",
+    borderWidth: 1,
+    borderColor: "rgba(52,78,65,0.14)",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5
+  },
+  apiPillOffline: {
+    backgroundColor: "#FFF1EE",
+    borderColor: "#F1B8A8"
+  },
+  apiPillText: {
+    color: "#344E41",
+    fontSize: 11,
+    fontWeight: "800"
+  },
+  apiPillTextOffline: {
+    color: "#8A1C1C"
   },
   heroCard: {
     marginTop: 18,
@@ -865,6 +965,39 @@ const styles = StyleSheet.create({
   contentInner: {
     padding: 20,
     paddingBottom: 118
+  },
+  orderSuccess: {
+    minHeight: 72,
+    borderRadius: 8,
+    padding: 14,
+    marginBottom: 12,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#CFE5D5",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    shadowColor: "#243124",
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 }
+  },
+  successIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: "#344E41",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  orderSuccessText: {
+    flex: 1
+  },
+  orderSuccessTitle: {
+    color: "#162016",
+    fontSize: 15,
+    fontWeight: "900",
+    marginBottom: 3
   },
   sectionHeader: {
     marginTop: 8,
