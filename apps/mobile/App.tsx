@@ -32,6 +32,22 @@ const starterMessages: ChatMessage[] = [
 
 type ApiStatus = "checking" | "online" | "offline";
 
+const palette = {
+  background: "#FFFDF5",
+  surface: "#FFFFFF",
+  primary: "#FF6B35",
+  secondary: "#2EC4B6",
+  accent: "#FFD166",
+  text: "#1F2933",
+  muted: "#6B7280",
+  success: "#2F9E44",
+  softTeal: "#E8FAF7",
+  softOrange: "#FFF0E8",
+  softYellow: "#FFF8DC",
+  border: "#F3E5D8",
+  danger: "#C2410C"
+};
+
 const dishAssets: Record<string, number> = {
   "fast-food": require("./assets/dishes/fast-food.png"),
   burger: require("./assets/dishes/burger.png"),
@@ -310,9 +326,9 @@ export default function App() {
             <Text style={styles.muted}>Mood discovery, nutrient match, and cart control</Text>
           </View>
           {isSending ? (
-            <ActivityIndicator color="#E4572E" />
+            <ActivityIndicator color={palette.primary} />
           ) : (
-            <Ionicons name="chatbubble-ellipses-outline" size={23} color="#344E41" />
+            <Ionicons name="chatbubble-ellipses-outline" size={23} color={palette.secondary} />
           )}
         </View>
 
@@ -332,13 +348,13 @@ export default function App() {
             value={draft}
             onChangeText={setDraft}
             placeholder="Tell me your mood or what to order"
-            placeholderTextColor="#8E9587"
+            placeholderTextColor={palette.muted}
             style={styles.input}
             returnKeyType="send"
             onSubmitEditing={() => submitMessage()}
           />
           <Pressable onPress={() => submitMessage()} style={styles.sendButton}>
-            <Ionicons name="arrow-up" size={18} color="#FFFFFF" />
+            <Ionicons name="arrow-up" size={18} color={palette.surface} />
           </Pressable>
         </View>
       </View>
@@ -352,7 +368,7 @@ export default function App() {
         behavior={Platform.select({ ios: "padding", android: undefined })}
         style={styles.screen}
       >
-        <LinearGradient colors={["#FFF9F0", "#F5F7F1"]} style={styles.header}>
+        <LinearGradient colors={[palette.background, palette.softTeal]} style={styles.header}>
           <View style={styles.headerTop}>
             <View>
               <Text style={styles.kicker}>AI mood-led ordering</Text>
@@ -365,14 +381,14 @@ export default function App() {
                 onPress={() => setIsCartOpen(true)}
                 hitSlop={10}
               >
-                <Ionicons name="bag-handle-outline" size={18} color="#162016" />
+                <Ionicons name="bag-handle-outline" size={18} color={palette.text} />
                 <Text style={styles.cartPillText}>{itemCount}</Text>
               </Pressable>
             </View>
           </View>
           <View style={styles.heroCard}>
             <View style={styles.heroIcon}>
-              <Ionicons name="sparkles" size={22} color="#FFFFFF" />
+              <Ionicons name="sparkles" size={22} color={palette.surface} />
             </View>
             <View style={styles.heroCopy}>
               <Text style={styles.heroTitle}>AI-first ordering.</Text>
@@ -390,7 +406,7 @@ export default function App() {
           {lastOrder ? (
             <View style={styles.orderSuccess}>
               <View style={styles.successIcon}>
-                <Ionicons name="checkmark" size={18} color="#FFFFFF" />
+                <Ionicons name="checkmark" size={18} color={palette.surface} />
               </View>
               <View style={styles.orderSuccessText}>
                 <Text style={styles.orderSuccessTitle}>Order {lastOrder.id} confirmed</Text>
@@ -410,7 +426,7 @@ export default function App() {
             </View>
             <View style={styles.expandButton}>
               <Text style={styles.expandButtonText}>{isMoodGuideOpen ? "Hide" : "Show"}</Text>
-              <Ionicons name={isMoodGuideOpen ? "chevron-up" : "chevron-down"} size={16} color="#344E41" />
+              <Ionicons name={isMoodGuideOpen ? "chevron-up" : "chevron-down"} size={16} color={palette.secondary} />
             </View>
           </Pressable>
 
@@ -426,7 +442,7 @@ export default function App() {
                   ]}
                 >
                   <View style={styles.moodIcon}>
-                    <Ionicons name={mood.icon as keyof typeof Ionicons.glyphMap} size={18} color="#344E41" />
+                    <Ionicons name={mood.icon as keyof typeof Ionicons.glyphMap} size={18} color={palette.secondary} />
                   </View>
                   <Text style={styles.moodLabel}>{mood.label}</Text>
                   <Text style={styles.moodPrompt}>{mood.prompt}</Text>
@@ -446,7 +462,7 @@ export default function App() {
                   onPress={() => addRecommendation(selectedMood.actions, selectedMood.label.toLowerCase())}
                   style={styles.recommendationButton}
                 >
-                  <Ionicons name="bag-add-outline" size={16} color="#FFFFFF" />
+                  <Ionicons name="bag-add-outline" size={16} color={palette.surface} />
                   <Text style={styles.recommendationButtonText}>Add meal</Text>
                 </Pressable>
               </View>
@@ -458,7 +474,7 @@ export default function App() {
               {selectedMood.nutrientNeed ? (
                 <View style={styles.nutritionBox}>
                   <View style={styles.nutritionHeader}>
-                    <Ionicons name="nutrition-outline" size={16} color="#344E41" />
+                    <Ionicons name="nutrition-outline" size={16} color={palette.secondary} />
                     <Text style={styles.nutritionTitle}>Body cue</Text>
                   </View>
                   <Text style={styles.nutritionCopy}>{selectedMood.nutrientNeed}</Text>
@@ -475,7 +491,7 @@ export default function App() {
               ) : null}
               {selectedMood.recommendations.map((item) => (
                 <View key={item.itemId} style={styles.recommendationLine}>
-                  <DishImage image={item.image} icon={item.icon} accent={item.accent ?? "#E4572E"} name={item.name} size={58} />
+                  <DishImage image={item.image} icon={item.icon} accent={item.accent ?? palette.primary} name={item.name} size={58} />
                   <View style={styles.recommendationText}>
                     <Text style={styles.cartItemName}>{item.name}</Text>
                     <Text style={styles.muted}>{item.reason}</Text>
@@ -515,7 +531,7 @@ export default function App() {
                   <View style={styles.cardFooter}>
                     <Text style={styles.price}>{formatMoney(item.price)}</Text>
                     <View style={styles.addButton}>
-                      <Ionicons name="add" size={18} color="#FFFFFF" />
+                      <Ionicons name="add" size={18} color={palette.surface} />
                     </View>
                   </View>
                 </View>
@@ -531,7 +547,7 @@ export default function App() {
           <View style={styles.cartPanel}>
             {cart.length === 0 ? (
               <View style={styles.emptyCart}>
-                <Ionicons name="receipt-outline" size={26} color="#84907C" />
+                <Ionicons name="receipt-outline" size={26} color={palette.muted} />
                 <Text style={styles.emptyText}>Your cart is ready for a mood or an instruction.</Text>
               </View>
             ) : (
@@ -545,11 +561,11 @@ export default function App() {
                   </View>
                   <View style={styles.quantityStepper}>
                     <Pressable onPress={() => changeQuantity(line, -1)} style={styles.stepButton}>
-                      <Ionicons name="remove" size={15} color="#162016" />
+                      <Ionicons name="remove" size={15} color={palette.text} />
                     </Pressable>
                     <Text style={styles.quantity}>{line.quantity}</Text>
                     <Pressable onPress={() => changeQuantity(line, 1)} style={styles.stepButton}>
-                      <Ionicons name="add" size={15} color="#162016" />
+                      <Ionicons name="add" size={15} color={palette.text} />
                     </Pressable>
                   </View>
                 </View>
@@ -579,12 +595,12 @@ export default function App() {
                   <Text style={styles.muted}>{itemCount} items ready for checkout</Text>
                 </View>
                 <Pressable onPress={() => setIsCartOpen(false)} style={styles.iconButton}>
-                  <Ionicons name="close" size={18} color="#162016" />
+                  <Ionicons name="close" size={18} color={palette.text} />
                 </Pressable>
               </View>
               {cart.length === 0 ? (
                 <View style={styles.emptyCheckout}>
-                  <Ionicons name="bag-outline" size={26} color="#84907C" />
+                  <Ionicons name="bag-outline" size={26} color={palette.muted} />
                   <Text style={styles.emptyText}>No items yet. Ask the assistant for a mood-based meal.</Text>
                 </View>
               ) : (
@@ -606,7 +622,7 @@ export default function App() {
                               style={styles.stepButton}
                               accessibilityLabel={`Remove one ${line.name}`}
                             >
-                              <Ionicons name={line.quantity === 1 ? "trash-outline" : "remove"} size={15} color="#162016" />
+                              <Ionicons name={line.quantity === 1 ? "trash-outline" : "remove"} size={15} color={palette.text} />
                             </Pressable>
                             <Text style={styles.quantity}>{line.quantity}</Text>
                             <Pressable
@@ -614,7 +630,7 @@ export default function App() {
                               style={styles.stepButton}
                               accessibilityLabel={`Add one ${line.name}`}
                             >
-                              <Ionicons name="add" size={15} color="#162016" />
+                              <Ionicons name="add" size={15} color={palette.text} />
                             </Pressable>
                           </View>
                         </View>
@@ -627,7 +643,7 @@ export default function App() {
                     <BillRow label="Total" value={formatMoney(total)} strong />
                   </View>
                   <Pressable onPress={confirmOrder} style={styles.checkoutButton}>
-                    <Ionicons name="checkmark-circle-outline" size={18} color="#FFFFFF" />
+                    <Ionicons name="checkmark-circle-outline" size={18} color={palette.surface} />
                     <Text style={styles.checkoutButtonText}>Confirm order</Text>
                   </Pressable>
                 </>
@@ -873,11 +889,11 @@ function ComboPanel({
         <Text style={styles.muted}>Pair your food with {drink.name}</Text>
       </View>
       <Pressable onPress={onAdd} style={styles.comboButton}>
-        <Ionicons name="add" size={16} color="#FFFFFF" />
+        <Ionicons name="add" size={16} color={palette.surface} />
         <Text style={styles.comboButtonText}>{formatMoney(drink.price)}</Text>
       </Pressable>
       <Pressable onPress={onDismiss} style={styles.comboDismiss} hitSlop={10}>
-        <Ionicons name="close" size={16} color="#6B705C" />
+        <Ionicons name="close" size={16} color={palette.muted} />
       </Pressable>
     </View>
   );
@@ -888,7 +904,7 @@ function ApiStatusPill({ status, label }: { status: ApiStatus; label: string }) 
     status === "online" ? "radio-button-on" : status === "offline" ? "cloud-offline-outline" : "sync";
   return (
     <View style={[styles.apiPill, status === "offline" && styles.apiPillOffline]}>
-      <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={13} color={status === "offline" ? "#8A1C1C" : "#344E41"} />
+      <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={13} color={status === "offline" ? palette.danger : palette.secondary} />
       <Text numberOfLines={1} style={[styles.apiPillText, status === "offline" && styles.apiPillTextOffline]}>
         {label}
       </Text>
@@ -932,7 +948,7 @@ function formatOfflineReason(error: unknown) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#FFF9F0"
+    backgroundColor: palette.background
   },
   screen: {
     flex: 1
@@ -955,14 +971,14 @@ const styles = StyleSheet.create({
     gap: 8
   },
   kicker: {
-    color: "#6B705C",
+    color: palette.muted,
     fontSize: 12,
     fontWeight: "700",
     textTransform: "uppercase",
     letterSpacing: 0
   },
   title: {
-    color: "#162016",
+    color: palette.text,
     fontSize: 30,
     fontWeight: "800",
     marginTop: 3
@@ -972,49 +988,49 @@ const styles = StyleSheet.create({
     height: 38,
     borderRadius: 19,
     paddingHorizontal: 12,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: palette.surface,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    shadowColor: "#243124",
+    shadowColor: palette.text,
     shadowOpacity: 0.1,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 }
   },
   cartPillText: {
     fontWeight: "800",
-    color: "#162016"
+    color: palette.text
   },
   apiPill: {
     maxWidth: 142,
     minHeight: 28,
     borderRadius: 14,
     paddingHorizontal: 10,
-    backgroundColor: "rgba(255,255,255,0.78)",
+    backgroundColor: "rgba(255,255,255,0.86)",
     borderWidth: 1,
-    borderColor: "rgba(52,78,65,0.14)",
+    borderColor: "rgba(46,196,182,0.26)",
     flexDirection: "row",
     alignItems: "center",
     gap: 5
   },
   apiPillOffline: {
-    backgroundColor: "#FFF1EE",
-    borderColor: "#F1B8A8"
+    backgroundColor: palette.softOrange,
+    borderColor: palette.primary
   },
   apiPillText: {
-    color: "#344E41",
+    color: palette.secondary,
     fontSize: 11,
     fontWeight: "800"
   },
   apiPillTextOffline: {
-    color: "#8A1C1C"
+    color: palette.danger
   },
   heroCard: {
     marginTop: 18,
     padding: 16,
     borderRadius: 8,
-    backgroundColor: "#162016",
+    backgroundColor: palette.secondary,
     flexDirection: "row",
     alignItems: "center",
     gap: 14
@@ -1023,7 +1039,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "#E4572E",
+    backgroundColor: palette.primary,
     alignItems: "center",
     justifyContent: "center"
   },
@@ -1031,12 +1047,12 @@ const styles = StyleSheet.create({
     flex: 1
   },
   heroTitle: {
-    color: "#FFFFFF",
+    color: palette.surface,
     fontSize: 17,
     fontWeight: "800"
   },
   heroText: {
-    color: "#DCE5D7",
+    color: "#EFFFFC",
     marginTop: 3,
     lineHeight: 19
   },
@@ -1052,13 +1068,13 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 14,
     marginBottom: 12,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: palette.surface,
     borderWidth: 1,
-    borderColor: "#CFE5D5",
+    borderColor: palette.secondary,
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    shadowColor: "#243124",
+    shadowColor: palette.text,
     shadowOpacity: 0.06,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 }
@@ -1067,7 +1083,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: "#344E41",
+    backgroundColor: palette.secondary,
     alignItems: "center",
     justifyContent: "center"
   },
@@ -1075,7 +1091,7 @@ const styles = StyleSheet.create({
     flex: 1
   },
   orderSuccessTitle: {
-    color: "#162016",
+    color: palette.text,
     fontSize: 15,
     fontWeight: "900",
     marginBottom: 3
@@ -1094,9 +1110,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: palette.surface,
     borderWidth: 1,
-    borderColor: "#E7E1D5",
+    borderColor: palette.border,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -1106,23 +1122,23 @@ const styles = StyleSheet.create({
     height: 34,
     borderRadius: 17,
     paddingHorizontal: 11,
-    backgroundColor: "#ECF2E8",
+    backgroundColor: palette.softTeal,
     flexDirection: "row",
     alignItems: "center",
     gap: 4
   },
   expandButtonText: {
-    color: "#344E41",
+    color: palette.secondary,
     fontWeight: "900",
     fontSize: 12
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: "800",
-    color: "#162016"
+    color: palette.text
   },
   muted: {
-    color: "#6B705C",
+    color: palette.muted,
     fontSize: 13,
     lineHeight: 18
   },
@@ -1137,37 +1153,37 @@ const styles = StyleSheet.create({
     minHeight: 112,
     borderRadius: 8,
     padding: 10,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: palette.surface,
     borderWidth: 1,
-    borderColor: "#E7E1D5",
+    borderColor: palette.border,
     justifyContent: "space-between"
   },
   activeMoodCard: {
-    borderColor: "#E4572E",
-    backgroundColor: "#FFF3EA"
+    borderColor: palette.primary,
+    backgroundColor: palette.softOrange
   },
   moodIcon: {
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: "#ECF2E8",
+    backgroundColor: palette.softTeal,
     alignItems: "center",
     justifyContent: "center"
   },
   moodLabel: {
-    color: "#162016",
+    color: palette.text,
     fontWeight: "900",
     marginTop: 8
   },
   moodPrompt: {
-    color: "#6B705C",
+    color: palette.muted,
     fontSize: 11,
     lineHeight: 15,
     marginTop: 3
   },
   recommendationPanel: {
     borderRadius: 8,
-    backgroundColor: "#162016",
+    backgroundColor: palette.secondary,
     padding: 14,
     marginBottom: 18,
     gap: 10
@@ -1179,29 +1195,29 @@ const styles = StyleSheet.create({
     gap: 12
   },
   recommendationTitle: {
-    color: "#FFFFFF",
+    color: palette.surface,
     fontSize: 19,
     fontWeight: "900"
   },
   moodQuoteBox: {
     borderRadius: 8,
-    backgroundColor: "#FFF3EA",
+    backgroundColor: palette.softOrange,
     borderWidth: 1,
-    borderColor: "#F4A261",
+    borderColor: palette.accent,
     paddingHorizontal: 12,
     paddingVertical: 10
   },
   moodQuoteText: {
-    color: "#7A2E18",
+    color: palette.danger,
     fontSize: 15,
     fontWeight: "900",
     lineHeight: 20
   },
   nutritionBox: {
     borderRadius: 8,
-    backgroundColor: "#F4F7EF",
+    backgroundColor: palette.softTeal,
     borderWidth: 1,
-    borderColor: "#CFE0C3",
+    borderColor: palette.secondary,
     padding: 12,
     gap: 8
   },
@@ -1211,14 +1227,14 @@ const styles = StyleSheet.create({
     gap: 6
   },
   nutritionTitle: {
-    color: "#344E41",
+    color: palette.secondary,
     fontSize: 13,
     fontWeight: "900",
     textTransform: "uppercase",
     letterSpacing: 0
   },
   nutritionCopy: {
-    color: "#162016",
+    color: palette.text,
     fontSize: 14,
     fontWeight: "700",
     lineHeight: 19
@@ -1230,14 +1246,14 @@ const styles = StyleSheet.create({
   },
   nutritionChip: {
     borderRadius: 14,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: palette.surface,
     borderWidth: 1,
-    borderColor: "#DAD7CD",
+    borderColor: palette.border,
     paddingHorizontal: 10,
     paddingVertical: 5
   },
   nutritionChipText: {
-    color: "#344E41",
+    color: palette.secondary,
     fontSize: 12,
     fontWeight: "800"
   },
@@ -1245,20 +1261,20 @@ const styles = StyleSheet.create({
     minHeight: 38,
     borderRadius: 19,
     paddingHorizontal: 13,
-    backgroundColor: "#E4572E",
+    backgroundColor: palette.primary,
     flexDirection: "row",
     alignItems: "center",
     gap: 6
   },
   recommendationButtonText: {
-    color: "#FFFFFF",
+    color: palette.surface,
     fontWeight: "900"
   },
   recommendationLine: {
     minHeight: 64,
     borderRadius: 8,
     padding: 11,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: palette.surface,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -1274,17 +1290,17 @@ const styles = StyleSheet.create({
   },
   cartScrim: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(22,32,22,0.34)"
+    backgroundColor: "rgba(31,41,51,0.38)"
   },
   checkoutSheet: {
     maxHeight: "82%",
     borderTopLeftRadius: 22,
     borderTopRightRadius: 22,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: palette.surface,
     padding: 18,
     paddingBottom: 24,
     gap: 12,
-    shadowColor: "#283618",
+    shadowColor: palette.text,
     shadowOpacity: 0.22,
     shadowRadius: 22,
     shadowOffset: { width: 0, height: -8 }
@@ -1294,7 +1310,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 5,
     borderRadius: 3,
-    backgroundColor: "#DAD7CD"
+    backgroundColor: palette.border
   },
   checkoutHeader: {
     flexDirection: "row",
@@ -1303,7 +1319,7 @@ const styles = StyleSheet.create({
     gap: 12
   },
   checkoutTitle: {
-    color: "#162016",
+    color: palette.text,
     fontSize: 20,
     fontWeight: "900"
   },
@@ -1311,7 +1327,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: "#F4F0E8",
+    backgroundColor: palette.softYellow,
     alignItems: "center",
     justifyContent: "center"
   },
@@ -1324,7 +1340,7 @@ const styles = StyleSheet.create({
   checkoutLine: {
     minHeight: 70,
     borderRadius: 8,
-    backgroundColor: "#F8F5EF",
+    backgroundColor: palette.softYellow,
     paddingHorizontal: 12,
     paddingVertical: 10,
     flexDirection: "row",
@@ -1341,7 +1357,7 @@ const styles = StyleSheet.create({
   },
   billBox: {
     borderTopWidth: 1,
-    borderTopColor: "#E7E1D5",
+    borderTopColor: palette.border,
     paddingTop: 10,
     gap: 8
   },
@@ -1351,29 +1367,29 @@ const styles = StyleSheet.create({
     justifyContent: "space-between"
   },
   billLabel: {
-    color: "#6B705C",
+    color: palette.muted,
     fontWeight: "700"
   },
   billValue: {
-    color: "#162016",
+    color: palette.text,
     fontWeight: "800"
   },
   billStrong: {
-    color: "#162016",
+    color: palette.text,
     fontSize: 17,
     fontWeight: "900"
   },
   checkoutButton: {
     minHeight: 48,
     borderRadius: 24,
-    backgroundColor: "#344E41",
+    backgroundColor: palette.secondary,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8
   },
   checkoutButtonText: {
-    color: "#FFFFFF",
+    color: palette.surface,
     fontWeight: "900",
     fontSize: 15
   },
@@ -1384,14 +1400,14 @@ const styles = StyleSheet.create({
     bottom: 16,
     zIndex: 12,
     borderRadius: 8,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: palette.surface,
     borderWidth: 1,
-    borderColor: "#E7E1D5",
+    borderColor: palette.border,
     padding: 12,
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    shadowColor: "#283618",
+    shadowColor: palette.text,
     shadowOpacity: 0.16,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 8 },
@@ -1401,7 +1417,7 @@ const styles = StyleSheet.create({
     flex: 1
   },
   comboTitle: {
-    color: "#162016",
+    color: palette.text,
     fontWeight: "900",
     fontSize: 16,
     marginBottom: 3
@@ -1410,20 +1426,20 @@ const styles = StyleSheet.create({
     minHeight: 38,
     borderRadius: 19,
     paddingHorizontal: 12,
-    backgroundColor: "#E4572E",
+    backgroundColor: palette.primary,
     flexDirection: "row",
     alignItems: "center",
     gap: 5
   },
   comboButtonText: {
-    color: "#FFFFFF",
+    color: palette.surface,
     fontWeight: "900"
   },
   comboDismiss: {
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: "#F5F1E8",
+    backgroundColor: palette.softYellow,
     alignItems: "center",
     justifyContent: "center"
   },
@@ -1435,21 +1451,21 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: "#DAD7CD",
+    borderColor: palette.border,
     justifyContent: "center",
     marginRight: 8,
-    backgroundColor: "#FFFFFF"
+    backgroundColor: palette.surface
   },
   activeTab: {
-    backgroundColor: "#344E41",
-    borderColor: "#344E41"
+    backgroundColor: palette.secondary,
+    borderColor: palette.secondary
   },
   tabText: {
-    color: "#344E41",
+    color: palette.secondary,
     fontWeight: "700"
   },
   activeTabText: {
-    color: "#FFFFFF"
+    color: palette.surface
   },
   menuGrid: {
     gap: 12
@@ -1458,12 +1474,12 @@ const styles = StyleSheet.create({
     minHeight: 122,
     borderRadius: 8,
     padding: 14,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: palette.surface,
     borderWidth: 1,
-    borderColor: "#E7E1D5",
+    borderColor: palette.border,
     flexDirection: "row",
     gap: 13,
-    shadowColor: "#283618",
+    shadowColor: palette.text,
     shadowOpacity: 0.07,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 5 }
@@ -1471,7 +1487,7 @@ const styles = StyleSheet.create({
   dishImage: {
     width: 72,
     overflow: "hidden",
-    shadowColor: "#1E251D",
+    shadowColor: palette.text,
     shadowOpacity: 0.12,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 }
@@ -1482,7 +1498,7 @@ const styles = StyleSheet.create({
     padding: 7
   },
   dishCaption: {
-    color: "#FFFFFF",
+    color: palette.surface,
     fontSize: 10,
     fontWeight: "900"
   },
@@ -1491,11 +1507,11 @@ const styles = StyleSheet.create({
   },
   itemName: {
     fontSize: 17,
-    color: "#162016",
+    color: palette.text,
     fontWeight: "800"
   },
   tags: {
-    color: "#6B705C",
+    color: palette.muted,
     marginTop: 5,
     lineHeight: 18
   },
@@ -1506,7 +1522,7 @@ const styles = StyleSheet.create({
     alignItems: "center"
   },
   price: {
-    color: "#162016",
+    color: palette.text,
     fontWeight: "900",
     fontSize: 16
   },
@@ -1514,15 +1530,15 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: "#E4572E",
+    backgroundColor: palette.primary,
     alignItems: "center",
     justifyContent: "center"
   },
   cartPanel: {
     borderRadius: 8,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: palette.surface,
     borderWidth: 1,
-    borderColor: "#E7E1D5",
+    borderColor: palette.border,
     overflow: "hidden"
   },
   emptyCart: {
@@ -1532,7 +1548,7 @@ const styles = StyleSheet.create({
     gap: 8
   },
   emptyText: {
-    color: "#6B705C",
+    color: palette.muted,
     fontWeight: "600"
   },
   cartLine: {
@@ -1540,7 +1556,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#F0ECE4",
+    borderBottomColor: palette.border,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -1550,14 +1566,14 @@ const styles = StyleSheet.create({
     flex: 1
   },
   cartItemName: {
-    color: "#162016",
+    color: palette.text,
     fontWeight: "800",
     marginBottom: 3
   },
   quantityStepper: {
     height: 36,
     borderRadius: 18,
-    backgroundColor: "#F4F0E8",
+    backgroundColor: palette.softYellow,
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 5,
@@ -1567,7 +1583,7 @@ const styles = StyleSheet.create({
     width: 27,
     height: 27,
     borderRadius: 14,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: palette.surface,
     alignItems: "center",
     justifyContent: "center"
   },
@@ -1575,15 +1591,15 @@ const styles = StyleSheet.create({
     minWidth: 18,
     textAlign: "center",
     fontWeight: "900",
-    color: "#162016"
+    color: palette.text
   },
   assistantPanel: {
     marginTop: 0,
     marginBottom: 16,
     borderRadius: 8,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: palette.surface,
     borderWidth: 1,
-    borderColor: "#E7E1D5",
+    borderColor: palette.border,
     padding: 14,
     gap: 12
   },
@@ -1601,35 +1617,35 @@ const styles = StyleSheet.create({
   },
   assistantBubble: {
     alignSelf: "flex-start",
-    backgroundColor: "#F4F0E8"
+    backgroundColor: palette.softYellow
   },
   userBubble: {
     alignSelf: "flex-end",
-    backgroundColor: "#344E41"
+    backgroundColor: palette.secondary
   },
   bubbleText: {
-    color: "#2E332C",
+    color: palette.text,
     lineHeight: 19
   },
   userBubbleText: {
-    color: "#FFFFFF"
+    color: palette.surface
   },
   promptChip: {
     height: 32,
     borderRadius: 16,
     paddingHorizontal: 12,
-    backgroundColor: "#ECF2E8",
+    backgroundColor: palette.softTeal,
     justifyContent: "center"
   },
   promptText: {
-    color: "#344E41",
+    color: palette.secondary,
     fontWeight: "700",
     fontSize: 12
   },
   composer: {
     minHeight: 50,
     borderRadius: 25,
-    backgroundColor: "#F4F0E8",
+    backgroundColor: palette.softYellow,
     flexDirection: "row",
     alignItems: "center",
     paddingLeft: 16,
@@ -1637,7 +1653,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    color: "#162016",
+    color: palette.text,
     fontSize: 15,
     paddingVertical: 10
   },
@@ -1645,8 +1661,10 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#E4572E",
+    backgroundColor: palette.primary,
     alignItems: "center",
     justifyContent: "center"
   }
 });
+
+
