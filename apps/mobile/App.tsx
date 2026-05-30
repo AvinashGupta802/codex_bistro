@@ -31,22 +31,72 @@ const starterMessages: ChatMessage[] = [
 ];
 
 type ApiStatus = "checking" | "online" | "offline";
+type ThemeId = "earth" | "citrus" | "tropical";
 
-const palette = {
-  background: "#FFFDF5",
-  surface: "#FFFFFF",
-  primary: "#FF6B35",
-  secondary: "#2EC4B6",
-  accent: "#FFD166",
-  text: "#1F2933",
-  muted: "#6B7280",
-  success: "#2F9E44",
-  softTeal: "#E8FAF7",
-  softOrange: "#FFF0E8",
-  softYellow: "#FFF8DC",
-  border: "#F3E5D8",
-  danger: "#C2410C"
-};
+const themes = {
+  earth: {
+    id: "earth",
+    name: "Earth Bistro",
+    caption: "Premium, warm, restaurant-led",
+    background: "#FFF9F0",
+    surface: "#FFFFFF",
+    primary: "#E4572E",
+    secondary: "#344E41",
+    accent: "#F4A261",
+    text: "#162016",
+    muted: "#6B705C",
+    success: "#344E41",
+    softTeal: "#ECF2E8",
+    softOrange: "#FFF3EA",
+    softYellow: "#F4F0E8",
+    border: "#E7E1D5",
+    danger: "#7A2E18",
+    headerEnd: "#F5F7F1",
+    heroText: "#DCE5D7"
+  },
+  citrus: {
+    id: "citrus",
+    name: "Fresh Citrus",
+    caption: "Bright, friendly, energetic",
+    background: "#FFFDF5",
+    surface: "#FFFFFF",
+    primary: "#FF6B35",
+    secondary: "#2EC4B6",
+    accent: "#FFD166",
+    text: "#1F2933",
+    muted: "#6B7280",
+    success: "#2F9E44",
+    softTeal: "#E8FAF7",
+    softOrange: "#FFF0E8",
+    softYellow: "#FFF8DC",
+    border: "#F3E5D8",
+    danger: "#C2410C",
+    headerEnd: "#E8FAF7",
+    heroText: "#EFFFFC"
+  },
+  tropical: {
+    id: "tropical",
+    name: "Tropical Fresh",
+    caption: "Colorful, young, playful",
+    background: "#F7FFF7",
+    surface: "#FFFFFF",
+    primary: "#FF9F1C",
+    secondary: "#00B4D8",
+    accent: "#FF5D8F",
+    text: "#102A43",
+    muted: "#627D98",
+    success: "#2F9E44",
+    softTeal: "#E7F8FF",
+    softOrange: "#FFF2DE",
+    softYellow: "#FFF7D6",
+    border: "#DCEEF5",
+    danger: "#B42318",
+    headerEnd: "#E7F8FF",
+    heroText: "#ECFEFF"
+  }
+} as const;
+
+const defaultThemeId: ThemeId = "earth";
 
 const dishAssets: Record<string, number> = {
   "fast-food": require("./assets/dishes/fast-food.png"),
@@ -105,6 +155,10 @@ export default function App() {
   const [apiStatus, setApiStatus] = useState<ApiStatus>("checking");
   const [apiStatusText, setApiStatusText] = useState("Checking kitchen");
   const [lastOrder, setLastOrder] = useState<{ id: string; total: number; eta: string } | null>(null);
+  const [themeId, setThemeId] = useState<ThemeId>(defaultThemeId);
+  const [isThemeOpen, setIsThemeOpen] = useState(false);
+  const palette = themes[themeId];
+  const styles = useMemo(() => createStyles(palette), [palette]);
 
   const visibleMenu = useMemo(
     () => menu.filter((item) => item.category === activeCategory),
@@ -375,15 +429,25 @@ export default function App() {
               <Text style={styles.title}>Intelligent Bistro</Text>
             </View>
             <View style={styles.headerActions}>
-              <ApiStatusPill status={apiStatus} label={apiStatusText} />
-              <Pressable
-                style={styles.cartPill}
-                onPress={() => setIsCartOpen(true)}
-                hitSlop={10}
-              >
-                <Ionicons name="bag-handle-outline" size={18} color={palette.text} />
-                <Text style={styles.cartPillText}>{itemCount}</Text>
-              </Pressable>
+              <ApiStatusPill status={apiStatus} label={apiStatusText} styles={styles} palette={palette} />
+              <View style={styles.headerButtonRow}>
+                <Pressable
+                  style={styles.iconPill}
+                  onPress={() => setIsThemeOpen(true)}
+                  hitSlop={10}
+                  accessibilityLabel="Choose app theme"
+                >
+                  <Ionicons name="color-palette-outline" size={18} color={palette.text} />
+                </Pressable>
+                <Pressable
+                  style={styles.cartPill}
+                  onPress={() => setIsCartOpen(true)}
+                  hitSlop={10}
+                >
+                  <Ionicons name="bag-handle-outline" size={18} color={palette.text} />
+                  <Text style={styles.cartPillText}>{itemCount}</Text>
+                </Pressable>
+              </View>
             </View>
           </View>
           <View style={styles.heroCard}>
@@ -582,6 +646,19 @@ export default function App() {
               setDrinkPairing(null);
             }}
             onDismiss={() => setDrinkPairing(null)}
+            styles={styles}
+            palette={palette}
+          />
+        ) : null}
+        {isThemeOpen ? (
+          <ThemeSheet
+            activeThemeId={themeId}
+            onSelect={(nextTheme) => {
+              setThemeId(nextTheme);
+              setIsThemeOpen(false);
+            }}
+            onClose={() => setIsThemeOpen(false)}
+            styles={styles}
           />
         ) : null}
         {isCartOpen ? (
@@ -638,9 +715,9 @@ export default function App() {
                     ))}
                   </ScrollView>
                   <View style={styles.billBox}>
-                    <BillRow label="Subtotal" value={formatMoney(subtotal)} />
-                    <BillRow label="Service" value={formatMoney(serviceFee)} />
-                    <BillRow label="Total" value={formatMoney(total)} strong />
+                    <BillRow label="Subtotal" value={formatMoney(subtotal)} styles={styles} />
+                    <BillRow label="Service" value={formatMoney(serviceFee)} styles={styles} />
+                    <BillRow label="Total" value={formatMoney(total)} strong styles={styles} />
                   </View>
                   <Pressable onPress={confirmOrder} style={styles.checkoutButton}>
                     <Ionicons name="checkmark-circle-outline" size={18} color={palette.surface} />
@@ -862,11 +939,11 @@ function DishImage({ image, icon, accent, name, size }: { image?: string; icon?:
   return (
     <ImageBackground
       source={source}
-      style={[styles.dishImage, { width: size, height: size, borderRadius: Math.min(18, size / 4), backgroundColor: accent }]}
+      style={[dishStyles.image, { width: size, height: size, borderRadius: Math.min(18, size / 4), backgroundColor: accent }]}
       imageStyle={{ borderRadius: Math.min(18, size / 4) }}
     >
-      <LinearGradient colors={["rgba(0,0,0,0.04)", "rgba(0,0,0,0.45)"]} style={styles.dishOverlay}>
-        <Text numberOfLines={1} style={styles.dishCaption}>{name.split(" ")[0]}</Text>
+      <LinearGradient colors={["rgba(0,0,0,0.04)", "rgba(0,0,0,0.45)"]} style={dishStyles.overlay}>
+        <Text numberOfLines={1} style={dishStyles.caption}>{name.split(" ")[0]}</Text>
       </LinearGradient>
     </ImageBackground>
   );
@@ -875,11 +952,15 @@ function DishImage({ image, icon, accent, name, size }: { image?: string; icon?:
 function ComboPanel({
   drink,
   onAdd,
-  onDismiss
+  onDismiss,
+  styles,
+  palette
 }: {
   drink: MenuItem;
   onAdd: () => void;
   onDismiss: () => void;
+  styles: ReturnType<typeof createStyles>;
+  palette: (typeof themes)[ThemeId];
 }) {
   return (
     <View style={styles.comboPanel}>
@@ -899,7 +980,71 @@ function ComboPanel({
   );
 }
 
-function ApiStatusPill({ status, label }: { status: ApiStatus; label: string }) {
+function ThemeSheet({
+  activeThemeId,
+  onSelect,
+  onClose,
+  styles
+}: {
+  activeThemeId: ThemeId;
+  onSelect: (theme: ThemeId) => void;
+  onClose: () => void;
+  styles: ReturnType<typeof createStyles>;
+}) {
+  return (
+    <View style={styles.cartOverlay}>
+      <Pressable style={styles.cartScrim} onPress={onClose} />
+      <View style={styles.themeSheet}>
+        <View style={styles.checkoutGrabber} />
+        <View style={styles.checkoutHeader}>
+          <View>
+            <Text style={styles.checkoutTitle}>Choose Theme</Text>
+            <Text style={styles.muted}>Earth Bistro stays the premium default</Text>
+          </View>
+          <Pressable onPress={onClose} style={styles.iconButton}>
+            <Ionicons name="close" size={18} color={themes[activeThemeId].text} />
+          </Pressable>
+        </View>
+        <View style={styles.themeOptions}>
+          {(Object.keys(themes) as ThemeId[]).map((themeKey) => {
+            const theme = themes[themeKey];
+            const isActive = activeThemeId === themeKey;
+            return (
+              <Pressable
+                key={theme.id}
+                onPress={() => onSelect(themeKey)}
+                style={[styles.themeOption, isActive && styles.activeThemeOption]}
+              >
+                <View style={styles.themeSwatches}>
+                  <View style={[styles.themeSwatch, { backgroundColor: theme.primary }]} />
+                  <View style={[styles.themeSwatch, { backgroundColor: theme.secondary }]} />
+                  <View style={[styles.themeSwatch, { backgroundColor: theme.accent }]} />
+                </View>
+                <View style={styles.themeOptionText}>
+                  <Text style={styles.cartItemName}>{theme.name}</Text>
+                  <Text style={styles.muted}>{theme.caption}</Text>
+                </View>
+                {isActive ? <Ionicons name="checkmark-circle" size={22} color={theme.secondary} /> : null}
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function ApiStatusPill({
+  status,
+  label,
+  styles,
+  palette
+}: {
+  status: ApiStatus;
+  label: string;
+  styles: ReturnType<typeof createStyles>;
+  palette: (typeof themes)[ThemeId];
+}) {
   const icon =
     status === "online" ? "radio-button-on" : status === "offline" ? "cloud-offline-outline" : "sync";
   return (
@@ -912,7 +1057,17 @@ function ApiStatusPill({ status, label }: { status: ApiStatus; label: string }) 
   );
 }
 
-function BillRow({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+function BillRow({
+  label,
+  value,
+  strong,
+  styles
+}: {
+  label: string;
+  value: string;
+  strong?: boolean;
+  styles: ReturnType<typeof createStyles>;
+}) {
   return (
     <View style={styles.billRow}>
       <Text style={[styles.billLabel, strong && styles.billStrong]}>{label}</Text>
@@ -945,7 +1100,29 @@ function formatOfflineReason(error: unknown) {
   return `I switched to the on-device parser because I could not reach ${apiUrl}.`;
 }
 
-const styles = StyleSheet.create({
+const dishStyles = StyleSheet.create({
+  image: {
+    width: 72,
+    overflow: "hidden",
+    shadowColor: "#1F2933",
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 }
+  },
+  overlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+    padding: 7
+  },
+  caption: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: "900"
+  }
+});
+
+function createStyles(palette: (typeof themes)[ThemeId]) {
+  return StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: palette.background
@@ -968,6 +1145,11 @@ const styles = StyleSheet.create({
   },
   headerActions: {
     alignItems: "flex-end",
+    gap: 8
+  },
+  headerButtonRow: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8
   },
   kicker: {
@@ -1001,6 +1183,18 @@ const styles = StyleSheet.create({
   cartPillText: {
     fontWeight: "800",
     color: palette.text
+  },
+  iconPill: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: palette.surface,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: palette.text,
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 }
   },
   apiPill: {
     maxWidth: 142,
@@ -1304,6 +1498,51 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.22,
     shadowRadius: 22,
     shadowOffset: { width: 0, height: -8 }
+  },
+  themeSheet: {
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22,
+    backgroundColor: palette.surface,
+    padding: 18,
+    paddingBottom: 24,
+    gap: 14,
+    shadowColor: palette.text,
+    shadowOpacity: 0.22,
+    shadowRadius: 22,
+    shadowOffset: { width: 0, height: -8 }
+  },
+  themeOptions: {
+    gap: 10
+  },
+  themeOption: {
+    minHeight: 72,
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: palette.background,
+    borderWidth: 1,
+    borderColor: palette.border,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12
+  },
+  activeThemeOption: {
+    borderColor: palette.primary,
+    backgroundColor: palette.softOrange
+  },
+  themeSwatches: {
+    flexDirection: "row",
+    width: 58
+  },
+  themeSwatch: {
+    width: 22,
+    height: 38,
+    borderRadius: 11,
+    marginRight: -4,
+    borderWidth: 2,
+    borderColor: palette.surface
+  },
+  themeOptionText: {
+    flex: 1
   },
   checkoutGrabber: {
     alignSelf: "center",
@@ -1665,6 +1904,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center"
   }
-});
+  });
+}
+
 
 
