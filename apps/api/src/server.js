@@ -4,6 +4,7 @@ import { parseOrderIntent } from "./intentParser.js";
 import { applyActions, cartTotal } from "./cart.js";
 import { menu } from "./menu.js";
 import { classifyMood, moods } from "./moodEngine.js";
+import { matchCraving } from "./cravingMatcher.js";
 
 const port = Number(process.env.PORT || 4000);
 const serviceVersion = process.env.APP_VERSION || "production-preview";
@@ -76,6 +77,18 @@ const server = http.createServer(async (req, res) => {
       sendJson(res, 200, {
         ...result,
         schemaVersion: "2026-05-16"
+      });
+      logResponse(requestId, req, res, startedAt, responseBody);
+      return;
+    }
+
+    if (req.method === "POST" && req.url === "/ai/craving") {
+      const body = await readJson(req);
+      logBody(requestId, "request_body", body);
+      const result = matchCraving(body.message ?? "");
+      sendJson(res, 200, {
+        ...result,
+        schemaVersion: "2026-06-01"
       });
       logResponse(requestId, req, res, startedAt, responseBody);
       return;

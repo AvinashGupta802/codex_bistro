@@ -1,5 +1,5 @@
 import { Platform } from "react-native";
-import { CartAction, CartLine, MoodResult } from "./types";
+import { CartAction, CartLine, CravingResult, MoodResult } from "./types";
 
 declare const process: {
   env: {
@@ -71,6 +71,20 @@ export async function sendMoodMessage(message: string) {
   }
 
   return (await response.json()) as MoodResult;
+}
+
+export async function sendCravingMessage(message: string) {
+  const response = await fetchWithTimeout(`${apiUrl}/ai/craving`, {
+    method: "POST",
+    headers: simplePostHeaders,
+    body: JSON.stringify({ message })
+  });
+
+  if (!response.ok) {
+    throw new ApiError(`Craving request failed: ${response.status}`, response.status, await safeReadText(response));
+  }
+
+  return (await response.json()) as CravingResult;
 }
 
 async function fetchWithTimeout(input: string, init?: RequestInit) {

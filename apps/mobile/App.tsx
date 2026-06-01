@@ -16,11 +16,11 @@ import {
   TextInput,
   View
 } from "react-native";
-import { ApiError, apiUrl, checkApiHealth, sendAssistantMessage, sendMoodMessage } from "./src/api";
+import { ApiError, apiUrl, checkApiHealth, sendAssistantMessage, sendCravingMessage, sendMoodMessage } from "./src/api";
 import { applyCartAction, applyCartActions, formatMoney } from "./src/cart";
 import { categories, menu } from "./src/data/menu";
 import { moodOptions } from "./src/data/moods";
-import { CartAction, CartLine, ChatMessage, MenuItem, MoodId, MoodResult } from "./src/types";
+import { CartAction, CartLine, ChatMessage, CravingResult, MenuItem, MoodId, MoodResult } from "./src/types";
 
 const starterMessages: ChatMessage[] = [
   {
@@ -149,6 +149,7 @@ export default function App() {
   const [draft, setDraft] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [selectedMood, setSelectedMood] = useState<MoodResult | null>(null);
+  const [selectedCraving, setSelectedCraving] = useState<CravingResult | null>(null);
   const [isMoodGuideOpen, setIsMoodGuideOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [drinkPairing, setDrinkPairing] = useState<MenuItem | null>(null);
@@ -239,6 +240,20 @@ export default function App() {
     ]);
   }
 
+  function addCravingMatch(actions: CartAction[], label = "craving match") {
+    setLastOrder(null);
+    setCart((current) => applyCartActions(current, actions, menu));
+    suggestDrinkFromActions(actions);
+    setMessages((current) => [
+      ...current,
+      {
+        id: `${Date.now()}-added-craving`,
+        role: "assistant",
+        text: `Added the ${label.toLowerCase()} to your cart.`
+      }
+    ]);
+  }
+
   function showCartInChat() {
     setIsCartOpen(true);
     setMessages((current) => [
@@ -279,6 +294,7 @@ export default function App() {
     try {
       const result = await sendMoodMessage(label);
       setSelectedMood(result);
+      setSelectedCraving(null);
       setIsMoodGuideOpen(false);
       setMessages((current) => [
         ...current,
@@ -289,6 +305,7 @@ export default function App() {
       setApiStatus("offline");
       setApiStatusText("Offline mode");
       setSelectedMood(fallback);
+      setSelectedCraving(null);
       setMessages((current) => [
         ...current,
         {
@@ -319,9 +336,21 @@ export default function App() {
         return;
       }
 
+      if (shouldTreatAsCraving(trimmed)) {
+        const cravingResult = await sendCravingMessage(trimmed);
+        setSelectedCraving(cravingResult);
+        setSelectedMood(null);
+        setMessages((current) => [
+          ...current,
+          { id: `${Date.now()}-craving-from-text`, role: "assistant", text: cravingResult.reply }
+        ]);
+        return;
+      }
+
       const moodResult = shouldTreatAsMood(trimmed) ? await sendMoodMessage(trimmed) : null;
       if (moodResult) {
         setSelectedMood(moodResult);
+        setSelectedCraving(null);
         setIsMoodGuideOpen(false);
         setMessages((current) => [
           ...current,
@@ -331,6 +360,7 @@ export default function App() {
       }
 
       const result = await sendAssistantMessage(trimmed, cart);
+      setSelectedCraving(null);
       setCart((current) => result.cart ?? applyCartActions(current, result.actions, menu));
       suggestDrinkFromActions(result.actions);
       setMessages((current) => [
@@ -340,6 +370,21 @@ export default function App() {
     } catch (error) {
       setApiStatus("offline");
       setApiStatusText("Offline mode");
+      if (shouldTreatAsCraving(trimmed)) {
+        const fallbackCraving = localCraving(trimmed);
+        setSelectedCraving(fallbackCraving);
+        setSelectedMood(null);
+        setMessages((current) => [
+          ...current,
+          {
+            id: `${Date.now()}-craving-offline`,
+            role: "assistant",
+            text: `${fallbackCraving.reply} ${formatOfflineReason(error)}`
+          }
+        ]);
+        return;
+      }
+
       if (shouldTreatAsMood(trimmed)) {
         const fallbackMood = localMood(trimmed, trimmed);
         setSelectedMood(fallbackMood);
@@ -511,6 +556,47 @@ export default function App() {
                   <Text style={styles.moodLabel}>{mood.label}</Text>
                   <Text style={styles.moodPrompt}>{mood.prompt}</Text>
                 </Pressable>
+              ))}
+            </View>
+          ) : null}
+
+          {selectedCraving ? (
+            <View style={styles.recommendationPanel}>
+              <View style={styles.recommendationHeader}>
+                <View>
+                  <Text style={styles.recommendationTitle}>Craving Match</Text>
+                  <Text style={styles.muted}>{Math.round(selectedCraving.confidence * 100)}% texture and taste match</Text>
+                </View>
+                <Pressable
+                  onPress={() => addCravingMatch(selectedCraving.actions, selectedCraving.label)}
+                  style={styles.recommendationButton}
+                >
+                  <Ionicons name="bag-add-outline" size={16} color={palette.surface} />
+                  <Text style={styles.recommendationButtonText}>Add match</Text>
+                </Pressable>
+              </View>
+              <View style={styles.nutritionBox}>
+                <View style={styles.nutritionHeader}>
+                  <Ionicons name="restaurant-outline" size={16} color={palette.secondary} />
+                  <Text style={styles.nutritionTitle}>{selectedCraving.label}</Text>
+                </View>
+                <View style={styles.nutritionChips}>
+                  {selectedCraving.flavorProfile.map((profile) => (
+                    <View key={profile} style={styles.nutritionChip}>
+                      <Text style={styles.nutritionChipText}>{profile}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+              {selectedCraving.recommendations.map((item) => (
+                <View key={item.itemId} style={styles.recommendationLine}>
+                  <DishImage image={item.image} icon={item.icon} accent={item.accent ?? palette.primary} name={item.name} size={58} />
+                  <View style={styles.recommendationText}>
+                    <Text style={styles.cartItemName}>{item.name}</Text>
+                    <Text style={styles.muted}>{item.reason}</Text>
+                  </View>
+                  <Text style={styles.price}>{formatMoney(item.price)}</Text>
+                </View>
               ))}
             </View>
           ) : null}
@@ -735,6 +821,8 @@ export default function App() {
 
 function shouldTreatAsMood(message: string) {
   const lower = message.toLowerCase();
+  if (shouldTreatAsCraving(message)) return false;
+
   const isOrderCommand = /\b(add|remove|clear|set|change|order|get|give me|cart|water|fries|pizza|burger|sandwich|pasta|sushi|ramen|nachos|chicken|drink)\b/.test(lower);
   if (isOrderCommand) return false;
 
@@ -758,6 +846,31 @@ function shouldTreatAsMood(message: string) {
   ];
 
   return moodWords.some((word) => lower.includes(word)) || lower.split(/\s+/).length >= 3;
+}
+
+function shouldTreatAsCraving(message: string) {
+  const lower = message.toLowerCase();
+  const cravingWords = [
+    "crunchy",
+    "crispy",
+    "crisp",
+    "juicy",
+    "tender",
+    "tangy",
+    "zesty",
+    "sour",
+    "citrus",
+    "creamy",
+    "cheesy",
+    "spicy",
+    "hot",
+    "sweet",
+    "dessert",
+    "fresh",
+    "light"
+  ];
+  const requestShape = /\b(something|taste|flavour|flavor|texture|outside|inside|with a drink|along drink|drink)\b/.test(lower);
+  return cravingWords.some((word) => lower.includes(word)) && requestShape;
 }
 
 function isCartQuestion(message: string) {
@@ -933,6 +1046,107 @@ const localNutritionReason = {
   relaxed: "Fits a slower meal with variety and texture.",
   balanced: "Covers a steady mix of fiber, protein, and vegetables."
 };
+
+const localCravingRules = [
+  {
+    label: "Crunchy outside, juicy inside",
+    words: ["crunchy", "crispy", "crisp", "juicy", "tender", "outside", "inside"],
+    items: ["fried-chicken", "spicy-chicken", "loaded-nachos"],
+    reason: "crisp texture with a warm, juicy center"
+  },
+  {
+    label: "Tangy drink",
+    words: ["tangy", "zesty", "sour", "citrus", "lime", "lemon", "refreshing"],
+    items: ["ginger-ale", "kombucha", "espresso-tonic", "cold-pressed-juice"],
+    reason: "bright acidity and a refreshing finish"
+  },
+  {
+    label: "Creamy comfort",
+    words: ["creamy", "cheesy", "soft", "rich", "comfort", "warm"],
+    items: ["alfredo-pasta", "mac-cheese", "classic-mac", "butter-chicken"],
+    reason: "creamy texture and a comforting finish"
+  },
+  {
+    label: "Fresh and light",
+    words: ["fresh", "light", "healthy", "clean", "green", "salad"],
+    items: ["greek-salad", "mediterranean-bowl", "poke-bowl", "cold-pressed-juice"],
+    reason: "fresh vegetables, color, and lighter energy"
+  },
+  {
+    label: "Spicy and bold",
+    words: ["spicy", "hot", "bold", "masala", "pepper", "fiery"],
+    items: ["spicy-chicken", "thai-curry", "butter-chicken", "tacos"],
+    reason: "bold heat and layered flavor"
+  },
+  {
+    label: "Sweet finish",
+    words: ["sweet", "dessert", "chocolate", "cake", "shake", "cold sweet"],
+    items: ["choco-lava", "cheesecake", "milkshake", "hot-cocoa"],
+    reason: "sweetness and a dessert-style finish"
+  }
+];
+
+function localCraving(input: string): CravingResult {
+  const lower = input.toLowerCase();
+  const wantsDrink = /\b(drink|beverage|juice|soda|water|tonic|shake)\b/.test(lower);
+  const matches = localCravingRules
+    .map((rule) => ({
+      ...rule,
+      score: rule.words.reduce((sum, word) => sum + (lower.includes(word) ? 1 : 0), 0)
+    }))
+    .filter((rule) => rule.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, wantsDrink ? 2 : 1);
+
+  if (matches.length === 0) {
+    return {
+      label: "Chef's best guess",
+      confidence: 0.45,
+      reply: "I could not read a clear texture or flavor cue yet. Try crunchy, juicy, tangy, creamy, spicy, fresh, or sweet.",
+      flavorProfile: [],
+      recommendations: [],
+      actions: []
+    };
+  }
+
+  const itemIds = uniqueStrings(
+    matches.flatMap((rule) =>
+      rule.items.filter((itemId) => wantsDrink || menu.find((entry) => entry.id === itemId)?.category !== "Drinks")
+    )
+  ).slice(0, 4);
+  const recommendations = itemIds.map((itemId) => {
+    const item = menu.find((entry) => entry.id === itemId)!;
+    const match = matches.find((rule) => rule.items.includes(itemId)) ?? matches[0];
+    return {
+      itemId,
+      name: item.name,
+      price: item.price,
+      icon: item.icon,
+      accent: item.accent,
+      image: item.image,
+      reason: `${item.name} matches your request for ${match.reason}.`
+    };
+  });
+  const topFood = recommendations.find((item) => menu.find((entry) => entry.id === item.itemId)?.category !== "Drinks");
+  const topDrink = recommendations.find((item) => menu.find((entry) => entry.id === item.itemId)?.category === "Drinks");
+  const actionIds = uniqueStrings([topFood?.itemId, topDrink?.itemId].filter(Boolean) as string[]);
+  const matchedNames = actionIds.length > 0
+    ? actionIds.map((itemId) => menu.find((entry) => entry.id === itemId)?.name).filter(Boolean)
+    : recommendations.slice(0, 3).map((item) => item.name);
+
+  return {
+    label: matches.map((rule) => rule.label).join(" + "),
+    confidence: Math.min(0.94, 0.62 + matches.reduce((sum, rule) => sum + rule.score, 0) * 0.08),
+    reply: `I matched your craving to ${matchedNames.join(" with ")}.`,
+    flavorProfile: matches.map((rule) => rule.label),
+    recommendations,
+    actions: actionIds.map((itemId) => ({ type: "add_item", itemId, quantity: 1 }))
+  };
+}
+
+function uniqueStrings(values: string[]) {
+  return [...new Set(values)];
+}
 
 function DishImage({ image, icon, accent, name, size }: { image?: string; icon?: string; accent: string; name: string; size: number }) {
   const source = icon && dishAssets[icon] ? dishAssets[icon] : image ? { uri: image } : undefined;

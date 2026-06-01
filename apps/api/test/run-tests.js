@@ -3,6 +3,7 @@ import { parseOrderIntent } from "../src/intentParser.js";
 import { applyActions, cartTotal } from "../src/cart.js";
 import { menu } from "../src/menu.js";
 import { classifyMood } from "../src/moodEngine.js";
+import { matchCraving } from "../src/cravingMatcher.js";
 
 const first = parseOrderIntent("Add two spicy chicken sandwiches and a large water");
 assert.equal(first.actions.length, 2);
@@ -30,5 +31,10 @@ const mood = await classifyMood("I am stressed and anxious after a deadline");
 assert.equal(mood.mood, "stressed");
 assert.equal(mood.recommendations[0].itemId, "fried-chicken");
 assert.equal(mood.actions.length, 3);
+
+const craving = matchCraving("I need something crunchy outside and juicy inside along drink tangy in taste");
+assert.equal(craving.recommendations[0].itemId, "fried-chicken");
+assert.ok(craving.recommendations.some((item) => item.itemId === "ginger-ale"));
+assert.deepEqual(craving.actions.map((action) => action.itemId), ["fried-chicken", "ginger-ale"]);
 
 console.log("API parser tests passed");

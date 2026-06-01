@@ -79,6 +79,15 @@ export type MoodRecommendation = {
   reason: string;
 };
 
+export type CravingResult = {
+  label: string;
+  confidence: number;
+  reply: string;
+  flavorProfile: string[];
+  recommendations: MoodRecommendation[];
+  actions: CartAction[];
+};
+
 export type MoodResult = {
   mood: MoodId;
   label: string;
