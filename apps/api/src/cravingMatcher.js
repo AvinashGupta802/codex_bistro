@@ -16,6 +16,20 @@ const cravingRules = [
     reason: "bright acidity and a refreshing finish"
   },
   {
+    id: "soft-swallow",
+    label: "Soft and easy to swallow",
+    signals: ["soft", "swallow", "directly", "smooth", "silky", "soup", "gentle"],
+    items: ["tomato-soup", "classic-mac", "alfredo-pasta", "authentic-ramen"],
+    reason: "a soft texture that feels gentle and easy to eat"
+  },
+  {
+    id: "sparkling-drink",
+    label: "Sparkling drink",
+    signals: ["sparkling", "sparling", "bubbly", "fizzy", "soda", "carbonated"],
+    items: ["sparkling-soda", "kombucha", "espresso-tonic"],
+    reason: "a fizzy lift and clean sparkling finish"
+  },
+  {
     id: "creamy-comfort",
     label: "Creamy comfort",
     signals: ["creamy", "cheesy", "soft", "rich", "comfort", "warm"],
@@ -55,7 +69,8 @@ export function matchCraving(input) {
     .filter((rule) => rule.score > 0)
     .sort((a, b) => b.score - a.score);
 
-  const selectedRules = scoredRules.slice(0, text.includes("drink") || text.includes("beverage") ? 2 : 1);
+  const wantsDrink = /\b(drink|beverage|juice|soda|water|tonic|shake|sparkling|sparling|bubbly|fizzy)\b/.test(text);
+  const selectedRules = scoredRules.slice(0, wantsDrink ? 2 : 1);
   if (selectedRules.length === 0) {
     return {
       label: "Chef's best guess",
@@ -67,12 +82,20 @@ export function matchCraving(input) {
     };
   }
 
-  const itemIds = unique(
+  const candidateItemIds = unique(
     selectedRules.flatMap((rule) => rule.items).filter((itemId) => {
-      if (!text.includes("drink") && menu.find((item) => item.id === itemId)?.category === "Drinks") return false;
+      if (!wantsDrink && menu.find((item) => item.id === itemId)?.category === "Drinks") return false;
       return true;
     })
-  ).slice(0, 4);
+  );
+  const firstDrink = wantsDrink
+    ? candidateItemIds.find((itemId) => menu.find((item) => item.id === itemId)?.category === "Drinks")
+    : undefined;
+  const foodLimit = firstDrink ? 3 : 4;
+  const itemIds = unique([
+    ...candidateItemIds.filter((itemId) => menu.find((item) => item.id === itemId)?.category !== "Drinks").slice(0, foodLimit),
+    firstDrink
+  ].filter(Boolean));
 
   const recommendations = itemIds.map((itemId) => {
     const item = menu.find((entry) => entry.id === itemId);

@@ -17,6 +17,7 @@ export const menu = [
   item("poke-bowl", "High-End Poke Bowl", "Poke Bowl", "Japanese", 16.5, "#118AB2", "poke", ["poke", "poke bowl", "high end poke bowl"]),
   item("thai-curry", "Artisanal Thai Curry", "Thai Curry", "Thai", 15.95, "#EF476F", "curry", ["artisanal thai", "thai", "thai curry"]),
   item("classic-mac", "Classic Mac and Cheese", "Classic Mac", "Comfort", 11.5, "#F4A261", "mac", ["classic mac", "mac", "mac and cheese"]),
+  item("tomato-soup", "Velvety Tomato Soup", "Tomato Soup", "Comfort", 8.95, "#C44536", "soup", ["tomato soup", "velvety tomato soup", "soft soup", "smooth soup", "easy to swallow", "swallow directly"]),
   item("butter-chicken", "Butter Chicken with Naan", "Butter Chicken", "Indian", 16.25, "#BC6C25", "butter-chicken", ["butter chicken", "naan", "butter chicken with naan"]),
   item("choco-lava", "Warm Choco Lava Cake", "Choco Lava", "Dessert", 8.5, "#5C4033", "choco-lava", ["choco lava", "lava cake", "warm dessert", "dessert"]),
   item("cheesecake", "High-End Berry Cheesecake", "Cheesecake", "Dessert", 9.25, "#B5838D", "cheesecake", ["high end dessert", "cheesecake", "berry cheesecake"]),

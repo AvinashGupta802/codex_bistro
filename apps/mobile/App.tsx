@@ -860,6 +860,10 @@ function shouldTreatAsCraving(message: string) {
     "zesty",
     "sour",
     "citrus",
+    "soft",
+    "smooth",
+    "silky",
+    "swallow",
     "creamy",
     "cheesy",
     "spicy",
@@ -867,9 +871,13 @@ function shouldTreatAsCraving(message: string) {
     "sweet",
     "dessert",
     "fresh",
-    "light"
+    "light",
+    "sparkling",
+    "sparling",
+    "bubbly",
+    "fizzy"
   ];
-  const requestShape = /\b(something|taste|flavour|flavor|texture|outside|inside|with a drink|along drink|drink)\b/.test(lower);
+  const requestShape = /\b(something|taste|flavour|flavor|texture|outside|inside|directly|with a drink|along drink|drink)\b/.test(lower);
   return cravingWords.some((word) => lower.includes(word)) && requestShape;
 }
 
@@ -891,6 +899,7 @@ function findDrinkPairing(item: MenuItem) {
     "alfredo-pasta": "espresso-tonic",
     "mac-cheese": "warm-latte",
     "classic-mac": "hot-cocoa",
+    "tomato-soup": "sparkling-soda",
     "butter-chicken": "malt-beverage",
     "rainbow-sushi": "kombucha",
     "poke-bowl": "kombucha",
@@ -1061,6 +1070,18 @@ const localCravingRules = [
     reason: "bright acidity and a refreshing finish"
   },
   {
+    label: "Soft and easy to swallow",
+    words: ["soft", "swallow", "directly", "smooth", "silky", "soup", "gentle"],
+    items: ["tomato-soup", "classic-mac", "alfredo-pasta", "authentic-ramen"],
+    reason: "a soft texture that feels gentle and easy to eat"
+  },
+  {
+    label: "Sparkling drink",
+    words: ["sparkling", "sparling", "bubbly", "fizzy", "soda", "carbonated"],
+    items: ["sparkling-soda", "kombucha", "espresso-tonic"],
+    reason: "a fizzy lift and clean sparkling finish"
+  },
+  {
     label: "Creamy comfort",
     words: ["creamy", "cheesy", "soft", "rich", "comfort", "warm"],
     items: ["alfredo-pasta", "mac-cheese", "classic-mac", "butter-chicken"],
@@ -1088,7 +1109,7 @@ const localCravingRules = [
 
 function localCraving(input: string): CravingResult {
   const lower = input.toLowerCase();
-  const wantsDrink = /\b(drink|beverage|juice|soda|water|tonic|shake)\b/.test(lower);
+  const wantsDrink = /\b(drink|beverage|juice|soda|water|tonic|shake|sparkling|sparling|bubbly|fizzy)\b/.test(lower);
   const matches = localCravingRules
     .map((rule) => ({
       ...rule,
@@ -1109,11 +1130,19 @@ function localCraving(input: string): CravingResult {
     };
   }
 
-  const itemIds = uniqueStrings(
+  const candidateItemIds = uniqueStrings(
     matches.flatMap((rule) =>
       rule.items.filter((itemId) => wantsDrink || menu.find((entry) => entry.id === itemId)?.category !== "Drinks")
     )
-  ).slice(0, 4);
+  );
+  const firstDrink = wantsDrink
+    ? candidateItemIds.find((itemId) => menu.find((entry) => entry.id === itemId)?.category === "Drinks")
+    : undefined;
+  const foodLimit = firstDrink ? 3 : 4;
+  const itemIds = uniqueStrings([
+    ...candidateItemIds.filter((itemId) => menu.find((entry) => entry.id === itemId)?.category !== "Drinks").slice(0, foodLimit),
+    firstDrink
+  ].filter(Boolean) as string[]);
   const recommendations = itemIds.map((itemId) => {
     const item = menu.find((entry) => entry.id === itemId)!;
     const match = matches.find((rule) => rule.items.includes(itemId)) ?? matches[0];
