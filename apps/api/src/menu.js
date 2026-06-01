@@ -13,6 +13,7 @@ export const menu = [
   item("mexican-bowl", "Mexican Power Bowl", "Mexican Bowl", "Mexican", 12.95, "#F9844A", "mexican-bowl", ["mexican", "mexican bowl"]),
   item("rainbow-sushi", "Rainbow Sushi", "Rainbow Sushi", "Japanese", 17.5, "#457B9D", "sushi", ["rainbow sushi", "sushi"]),
   item("colorful-stir-fry", "Colorful Stir Fry", "Stir Fry", "Asian", 14.75, "#70A288", "wok", ["colorful stir fry", "stir fry"]),
+  item("steamed-momos", "Steamed Veg Momos", "Steamed Momos", "Asian", 9.95, "#6A994E", "mezze", ["steamed momos", "veg momos", "momos", "steamed dumplings", "boiled dumplings", "not fried dumplings"]),
   item("rare-steak", "Seared Rare Steak", "Rare Steak", "Steakhouse", 22, "#8A1C1C", "steak", ["rare steak", "steak"]),
   item("poke-bowl", "High-End Poke Bowl", "Poke Bowl", "Japanese", 16.5, "#118AB2", "poke", ["poke", "poke bowl", "high end poke bowl"]),
   item("thai-curry", "Artisanal Thai Curry", "Thai Curry", "Thai", 15.95, "#EF476F", "curry", ["artisanal thai", "thai", "thai curry"]),

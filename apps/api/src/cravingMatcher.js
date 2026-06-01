@@ -23,6 +23,13 @@ const cravingRules = [
     reason: "a soft texture that feels gentle and easy to eat"
   },
   {
+    id: "boiled-steamed",
+    label: "Boiled or steamed, not fried",
+    signals: ["boiled", "steam", "steamed", "not fried", "non fried", "unfried", "without oil", "less oil"],
+    items: ["steamed-momos", "tomato-soup", "authentic-ramen", "mediterranean-bowl", "greek-salad"],
+    reason: "a lighter boiled or steamed style instead of fried food"
+  },
+  {
     id: "sparkling-drink",
     label: "Sparkling drink",
     signals: ["sparkling", "sparling", "bubbly", "fizzy", "soda", "carbonated"],

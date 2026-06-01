@@ -15,6 +15,7 @@ export const menu: MenuItem[] = [
   item("mexican-bowl", "Mexican Power Bowl", "Mexican Bowl", "Mexican", 12.95, "#F9844A", "mexican-bowl"),
   item("rainbow-sushi", "Rainbow Sushi", "Rainbow Sushi", "Japanese", 17.5, "#457B9D", "sushi"),
   item("colorful-stir-fry", "Colorful Stir Fry", "Stir Fry", "Asian", 14.75, "#70A288", "wok"),
+  item("steamed-momos", "Steamed Veg Momos", "Steamed Momos", "Asian", 9.95, "#6A994E", "mezze"),
   item("rare-steak", "Seared Rare Steak", "Rare Steak", "Steakhouse", 22, "#8A1C1C", "steak"),
   item("poke-bowl", "High-End Poke Bowl", "Poke Bowl", "Japanese", 16.5, "#118AB2", "poke"),
   item("thai-curry", "Artisanal Thai Curry", "Thai Curry", "Thai", 15.95, "#EF476F", "curry"),

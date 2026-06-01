@@ -864,6 +864,12 @@ function shouldTreatAsCraving(message: string) {
     "smooth",
     "silky",
     "swallow",
+    "boiled",
+    "steam",
+    "steamed",
+    "non fried",
+    "not fried",
+    "unfried",
     "creamy",
     "cheesy",
     "spicy",
@@ -877,7 +883,7 @@ function shouldTreatAsCraving(message: string) {
     "bubbly",
     "fizzy"
   ];
-  const requestShape = /\b(something|taste|flavour|flavor|texture|outside|inside|directly|with a drink|along drink|drink)\b/.test(lower);
+  const requestShape = /\b(suggest|food|something|taste|flavour|flavor|texture|outside|inside|directly|with a drink|along drink|drink)\b/.test(lower);
   return cravingWords.some((word) => lower.includes(word)) && requestShape;
 }
 
@@ -1074,6 +1080,12 @@ const localCravingRules = [
     words: ["soft", "swallow", "directly", "smooth", "silky", "soup", "gentle"],
     items: ["tomato-soup", "classic-mac", "alfredo-pasta", "authentic-ramen"],
     reason: "a soft texture that feels gentle and easy to eat"
+  },
+  {
+    label: "Boiled or steamed, not fried",
+    words: ["boiled", "steam", "steamed", "not fried", "non fried", "unfried", "without oil", "less oil"],
+    items: ["steamed-momos", "tomato-soup", "authentic-ramen", "mediterranean-bowl", "greek-salad"],
+    reason: "a lighter boiled or steamed style instead of fried food"
   },
   {
     label: "Sparkling drink",

@@ -42,4 +42,9 @@ assert.equal(softCraving.recommendations[0].itemId, "tomato-soup");
 assert.ok(softCraving.recommendations.some((item) => item.itemId === "sparkling-soda"));
 assert.deepEqual(softCraving.actions.map((action) => action.itemId), ["tomato-soup", "sparkling-soda"]);
 
+const boiledCraving = matchCraving("suggest me some food which are boiled and not fried");
+assert.equal(boiledCraving.recommendations[0].itemId, "steamed-momos");
+assert.ok(boiledCraving.recommendations.some((item) => item.itemId === "tomato-soup"));
+assert.deepEqual(boiledCraving.actions.map((action) => action.itemId), ["steamed-momos"]);
+
 console.log("API parser tests passed");
