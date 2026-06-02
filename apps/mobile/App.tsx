@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -32,6 +32,24 @@ const starterMessages: ChatMessage[] = [
 
 type ApiStatus = "checking" | "online" | "offline";
 type ThemeId = "earth" | "citrus" | "tropical";
+type SpeechRecognitionEventLike = {
+  results: ArrayLike<ArrayLike<{ transcript: string }>>;
+};
+type SpeechRecognitionErrorLike = {
+  error?: string;
+};
+type SpeechRecognitionLike = {
+  lang: string;
+  interimResults: boolean;
+  maxAlternatives: number;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorLike) => void) | null;
+  onend: (() => void) | null;
+};
+type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
 
 const themes = {
   earth: {
@@ -148,6 +166,8 @@ export default function App() {
   const [messages, setMessages] = useState<ChatMessage[]>(starterMessages);
   const [draft, setDraft] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [voiceStatus, setVoiceStatus] = useState("");
   const [selectedMood, setSelectedMood] = useState<MoodResult | null>(null);
   const [selectedCraving, setSelectedCraving] = useState<CravingResult | null>(null);
   const [isMoodGuideOpen, setIsMoodGuideOpen] = useState(false);
@@ -160,6 +180,7 @@ export default function App() {
   const [isThemeOpen, setIsThemeOpen] = useState(false);
   const palette = themes[themeId];
   const styles = useMemo(() => createStyles(palette), [palette]);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
 
   const visibleMenu = useMemo(
     () => menu.filter((item) => item.category === activeCategory),
@@ -187,6 +208,13 @@ export default function App() {
 
     return () => {
       isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      recognitionRef.current?.abort();
+      recognitionRef.current = null;
     };
   }, []);
 
@@ -264,6 +292,90 @@ export default function App() {
         text: formatCartSummary(cart, subtotal, serviceFee, total)
       }
     ]);
+  }
+
+  function startVoiceInput() {
+    if (isSending) return;
+
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      setVoiceStatus("Voice stopped");
+      return;
+    }
+
+    if (Platform.OS !== "web") {
+      setMessages((current) => [
+        ...current,
+        {
+          id: `${Date.now()}-voice-native-unavailable`,
+          role: "assistant",
+          text: "Voice input is ready for the web app. For Android or iOS voice inside Expo, we would add a native speech package and build a dev client."
+        }
+      ]);
+      return;
+    }
+
+    const SpeechRecognition = getSpeechRecognitionConstructor();
+    if (!SpeechRecognition) {
+      setMessages((current) => [
+        ...current,
+        {
+          id: `${Date.now()}-voice-unsupported`,
+          role: "assistant",
+          text: "This browser does not support voice input. Please try Chrome or Edge, or type your mood or craving."
+        }
+      ]);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-IN";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognitionRef.current = recognition;
+    setIsListening(true);
+    setVoiceStatus("Listening...");
+
+    recognition.onresult = (event) => {
+      const transcript = Array.from(event.results)
+        .map((result) => result[0]?.transcript ?? "")
+        .join(" ")
+        .trim();
+
+      if (!transcript) {
+        setVoiceStatus("I could not hear that clearly");
+        return;
+      }
+
+      setDraft(transcript);
+      setVoiceStatus(`Heard: ${transcript}`);
+      submitMessage(transcript);
+    };
+
+    recognition.onerror = (event) => {
+      setIsListening(false);
+      setVoiceStatus("");
+      setMessages((current) => [
+        ...current,
+        {
+          id: `${Date.now()}-voice-error`,
+          role: "assistant",
+          text: `I could not capture voice clearly${event.error ? ` (${event.error})` : ""}. Please try again or type it.`
+        }
+      ]);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    try {
+      recognition.start();
+    } catch {
+      setIsListening(false);
+      setVoiceStatus("");
+    }
   }
 
   function confirmOrder() {
@@ -442,19 +554,29 @@ export default function App() {
           )}
         />
 
-        <View style={styles.composer}>
-          <TextInput
-            value={draft}
-            onChangeText={setDraft}
-            placeholder="Tell me your mood or what to order"
-            placeholderTextColor={palette.muted}
-            style={styles.input}
-            returnKeyType="send"
-            onSubmitEditing={() => submitMessage()}
-          />
-          <Pressable onPress={() => submitMessage()} style={styles.sendButton}>
-            <Ionicons name="arrow-up" size={18} color={palette.surface} />
-          </Pressable>
+        <View>
+          <View style={styles.composer}>
+            <Pressable
+              onPress={startVoiceInput}
+              style={[styles.voiceButton, isListening && styles.voiceButtonActive]}
+              accessibilityLabel={isListening ? "Stop voice input" : "Start voice input"}
+            >
+              <Ionicons name={isListening ? "mic" : "mic-outline"} size={18} color={isListening ? palette.surface : palette.secondary} />
+            </Pressable>
+            <TextInput
+              value={draft}
+              onChangeText={setDraft}
+              placeholder="Speak or type your mood, craving, or order"
+              placeholderTextColor={palette.muted}
+              style={styles.input}
+              returnKeyType="send"
+              onSubmitEditing={() => submitMessage()}
+            />
+            <Pressable onPress={() => submitMessage()} style={styles.sendButton}>
+              <Ionicons name="arrow-up" size={18} color={palette.surface} />
+            </Pressable>
+          </View>
+          {voiceStatus ? <Text style={styles.voiceStatus}>{voiceStatus}</Text> : null}
         </View>
       </View>
     );
@@ -846,6 +968,14 @@ function shouldTreatAsMood(message: string) {
   ];
 
   return moodWords.some((word) => lower.includes(word)) || lower.split(/\s+/).length >= 3;
+}
+
+function getSpeechRecognitionConstructor() {
+  const root = globalThis as unknown as {
+    SpeechRecognition?: SpeechRecognitionConstructor;
+    webkitSpeechRecognition?: SpeechRecognitionConstructor;
+  };
+  return root.SpeechRecognition ?? root.webkitSpeechRecognition ?? null;
 }
 
 function shouldTreatAsCraving(message: string) {
@@ -2144,6 +2274,28 @@ function createStyles(palette: (typeof themes)[ThemeId]) {
     alignItems: "center",
     paddingLeft: 16,
     paddingRight: 6
+  },
+  voiceButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: palette.surface,
+    borderWidth: 1,
+    borderColor: palette.border,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 8
+  },
+  voiceButtonActive: {
+    backgroundColor: palette.secondary,
+    borderColor: palette.secondary
+  },
+  voiceStatus: {
+    color: palette.secondary,
+    fontSize: 12,
+    fontWeight: "700",
+    marginTop: 8,
+    marginLeft: 12
   },
   input: {
     flex: 1,
